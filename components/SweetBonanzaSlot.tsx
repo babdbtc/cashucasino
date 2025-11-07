@@ -804,16 +804,20 @@ export default function SweetBonanzaSlot() {
 
         // If we're already in free spins, this is an extension
         if (freeSpinsRemaining > 0) {
+          // Pause autoplay IMMEDIATELY to prevent clicking spin during the delay
+          setNeedsManualSpinToStartFreeSpins(true);
+
           // Delay showing the extension overlay so users can see the lollipops
           setTimeout(() => {
             setExtendedFreeSpins(data.freeSpinsAwarded || 0);
-            // Pause autoplay for retriggered free spins
-            setNeedsManualSpinToStartFreeSpins(true);
             // Keep the extension notification visible (user needs to click spin to continue)
           }, 2500); // 2.5 second delay to show the lollipops
         } else {
           // Starting fresh free spins - fade out win display first, then animate lollipops
           const awarded = data.freeSpinsAwarded || 0;
+
+          // Pause autoplay IMMEDIATELY to prevent clicking spin during animations
+          setNeedsManualSpinToStartFreeSpins(true);
 
           // Use flushSync to ensure awardedFreeSpins is set immediately before showing overlay
           flushSync(() => {
@@ -835,27 +839,19 @@ export default function SweetBonanzaSlot() {
                   setCurrentSpinWin(0);
                   setTotalWinDisplay(0);
 
-                  // Then animate lollipops
-                  animateFreeSpinsLollipops().then(() => {
-                    // After animation completes, show the overlay
-                    setNeedsManualSpinToStartFreeSpins(true); // Pause autoplay - require manual spin to start free spins
-                  });
+                  // Then animate lollipops (autoplay already paused)
+                  animateFreeSpinsLollipops();
                 }
               });
             } else {
               // Fallback if element not found
               setCurrentSpinWin(0);
               setTotalWinDisplay(0);
-              animateFreeSpinsLollipops().then(() => {
-                setNeedsManualSpinToStartFreeSpins(true);
-              });
+              animateFreeSpinsLollipops();
             }
           } else {
             // No win to fade out, go straight to lollipop animation
-            animateFreeSpinsLollipops().then(() => {
-              // After animation completes, show the overlay
-              setNeedsManualSpinToStartFreeSpins(true); // Pause autoplay - require manual spin to start free spins
-            });
+            animateFreeSpinsLollipops();
           }
         }
       }
