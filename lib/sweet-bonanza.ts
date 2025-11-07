@@ -52,49 +52,49 @@ export interface SpinResult {
 }
 
 // Symbol weights for regular spins (higher = more common)
-// Flatter distribution - more gradual step-down gives better high-value clusters without reducing total cluster frequency
+// Steeper distribution with dominant low symbols for cluster formation + boosted high symbols
 const SYMBOL_WEIGHTS: Record<Exclude<Symbol, "💣">, number> = {
-  "🍌": 23,   // Banana - most common, lowest payout (reduced from 26 to flatten)
-  "🫐": 21,   // Grapes - common (reduced from 23)
-  "🍉": 19,   // Watermelon - common (reduced from 20)
-  "🍇": 17,   // Plum - medium (reduced from 18)
-  "🍎": 16,   // Apple - medium (increased from 15)
-  "💙": 14,   // Blue Candy - medium-high (increased from 13)
-  "💚": 12,   // Green Candy - medium-high (increased from 10)
-  "💜": 10,   // Purple Candy - high (increased from 8)
-  "🍬": 7,    // Red Heart Candy - highest payout (increased from 6)
+  "🍌": 38,   // Banana - very common for cluster formation
+  "🫐": 34,   // Grapes - very common for cluster formation
+  "🍉": 30,   // Watermelon - common
+  "🍇": 22,   // Plum - medium
+  "🍎": 18,   // Apple - medium
+  "💙": 15,   // Blue Candy - medium-high (boosted from original 13)
+  "💚": 12,   // Green Candy - rare (boosted from original 10)
+  "💜": 10,   // Purple Candy - very rare (boosted from original 8)
+  "🍬": 8,    // Red Heart Candy - extremely rare (boosted from original 6)
   "🍭": 2,    // Scatter - rare, triggers free spins
 };
-// Total weight: 141 (same as before to maintain cluster frequency)
+// Total weight: 189 (high weight + steep curve = frequent clusters with some high-value wins)
 
 // Symbol weights for free spins (bombs can appear)
-// Same flattened distribution + reduced bomb frequency
+// Same steep distribution for cluster formation + reduced bomb frequency
 const FREE_SPINS_SYMBOL_WEIGHTS: Record<Symbol, number> = {
-  "🍌": 23,   // Banana (reduced from 26)
-  "🫐": 21,   // Grapes (reduced from 23)
-  "🍉": 19,   // Watermelon (reduced from 20)
-  "🍇": 17,   // Plum (reduced from 18)
-  "🍎": 16,   // Apple (increased from 15)
-  "💙": 14,   // Blue Candy (increased from 13)
-  "💚": 12,   // Green Candy (increased from 10)
-  "💜": 10,   // Purple Candy (increased from 8)
-  "🍬": 7,    // Red Heart Candy (increased from 6)
+  "🍌": 38,   // Banana
+  "🫐": 34,   // Grapes
+  "🍉": 30,   // Watermelon
+  "🍇": 22,   // Plum
+  "🍎": 18,   // Apple
+  "💙": 15,   // Blue Candy
+  "💚": 12,   // Green Candy
+  "💜": 10,   // Purple Candy
+  "🍬": 8,    // Red Heart Candy
   "🍭": 2,    // Scatter
-  "💣": 7,    // Bomb - ~4.7% per position (reduced from 9 to 7)
+  "💣": 7,    // Bomb - ~3.6% per position
 };
-// Total weight: 148 (was 150 - maintains similar cluster frequency)
+// Total weight: 196 (high weight + steep curve = frequent clusters)
 
-// Payouts at original values - clustering reduction provides RTP balance
+// Payouts - slightly increased for more rewarding cluster wins
 const BASE_PAYOUTS: Record<Exclude<Symbol, "🍭" | "💣">, { symbols8: number; symbols10: number; symbols12: number }> = {
-  "🍬": { symbols8: 10,  symbols10: 25,   symbols12: 50 },    // Red Heart Candy
-  "💜": { symbols8: 2.5, symbols10: 10,   symbols12: 25 },    // Purple Candy
-  "💚": { symbols8: 2,   symbols10: 5,    symbols12: 15 },    // Green Candy
-  "💙": { symbols8: 1.5, symbols10: 2,    symbols12: 12 },    // Blue Candy
-  "🍎": { symbols8: 1,   symbols10: 1.5,  symbols12: 10 },    // Red Apple
-  "🍇": { symbols8: 0.8, symbols10: 1.2,  symbols12: 8 },     // Purple Plum
-  "🍉": { symbols8: 0.5, symbols10: 1,    symbols12: 5 },     // Green Watermelon
-  "🫐": { symbols8: 0.4, symbols10: 0.9,  symbols12: 4 },     // Purple Grapes
-  "🍌": { symbols8: 0.25, symbols10: 0.75, symbols12: 2 },    // Yellow Banana
+  "🍬": { symbols8: 12,  symbols10: 30,   symbols12: 60 },    // Red Heart Candy (+20%)
+  "💜": { symbols8: 3,   symbols10: 12,   symbols12: 30 },    // Purple Candy (+20%)
+  "💚": { symbols8: 2.4, symbols10: 6,    symbols12: 18 },    // Green Candy (+20%)
+  "💙": { symbols8: 1.8, symbols10: 2.5,  symbols12: 14 },    // Blue Candy (+20%)
+  "🍎": { symbols8: 1.2, symbols10: 1.8,  symbols12: 12 },    // Red Apple (+20%)
+  "🍇": { symbols8: 1,   symbols10: 1.5,  symbols12: 10 },    // Purple Plum (+20-25%)
+  "🍉": { symbols8: 0.6, symbols10: 1.2,  symbols12: 6 },     // Green Watermelon (+20%)
+  "🫐": { symbols8: 0.5, symbols10: 1.1,  symbols12: 5 },     // Purple Grapes (+20-25%)
+  "🍌": { symbols8: 0.3, symbols10: 0.9,  symbols12: 2.5 },   // Yellow Banana (+20-25%)
 };
 
 // Scatter payouts (4, 5, 6+ scatters)
