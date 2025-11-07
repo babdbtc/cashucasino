@@ -84,17 +84,17 @@ const FREE_SPINS_SYMBOL_WEIGHTS: Record<Symbol, number> = {
 };
 // Total weight: 197.5 (high weight + steep curve = frequent clusters)
 
-// Payouts - increased for more rewarding cluster wins
+// Payouts - slightly increased for more rewarding cluster wins
 const BASE_PAYOUTS: Record<Exclude<Symbol, "🍭" | "💣">, { symbols8: number; symbols10: number; symbols12: number }> = {
-  "🍬": { symbols8: 13.2,  symbols10: 33,    symbols12: 66 },    // Red Heart Candy (+32%)
-  "💜": { symbols8: 3.3,   symbols10: 13.2,  symbols12: 33 },    // Purple Candy (+32%)
-  "💚": { symbols8: 2.64,  symbols10: 6.6,   symbols12: 19.8 },  // Green Candy (+32%)
-  "💙": { symbols8: 1.98,  symbols10: 2.75,  symbols12: 15.4 },  // Blue Candy (+32%)
-  "🍎": { symbols8: 1.32,  symbols10: 1.98,  symbols12: 13.2 },  // Red Apple (+32%)
-  "🍇": { symbols8: 1.1,   symbols10: 1.65,  symbols12: 11 },    // Purple Plum (+32-37%)
-  "🍉": { symbols8: 0.66,  symbols10: 1.32,  symbols12: 6.6 },   // Green Watermelon (+32%)
-  "🫐": { symbols8: 0.55,  symbols10: 1.21,  symbols12: 5.5 },   // Purple Grapes (+32-37%)
-  "🍌": { symbols8: 0.33,  symbols10: 0.99,  symbols12: 2.75 },  // Yellow Banana (+32-37%)
+  "🍬": { symbols8: 12,  symbols10: 30,   symbols12: 60 },    // Red Heart Candy (+20%)
+  "💜": { symbols8: 3,   symbols10: 12,   symbols12: 30 },    // Purple Candy (+20%)
+  "💚": { symbols8: 2.4, symbols10: 6,    symbols12: 18 },    // Green Candy (+20%)
+  "💙": { symbols8: 1.8, symbols10: 2.5,  symbols12: 14 },    // Blue Candy (+20%)
+  "🍎": { symbols8: 1.2, symbols10: 1.8,  symbols12: 12 },    // Red Apple (+20%)
+  "🍇": { symbols8: 1,   symbols10: 1.5,  symbols12: 10 },    // Purple Plum (+20-25%)
+  "🍉": { symbols8: 0.6, symbols10: 1.2,  symbols12: 6 },     // Green Watermelon (+20%)
+  "🫐": { symbols8: 0.5, symbols10: 1.1,  symbols12: 5 },     // Purple Grapes (+20-25%)
+  "🍌": { symbols8: 0.3, symbols10: 0.9,  symbols12: 2.5 },   // Yellow Banana (+20-25%)
 };
 
 // Scatter payouts (4, 5, 6+ scatters)
