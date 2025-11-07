@@ -644,6 +644,7 @@ export default function SweetBonanzaSlot() {
     setNeedsManualSpinAfterFreeSpins(false);
     setNeedsManualSpinToStartFreeSpins(false);
     setAwardedFreeSpins(0); // Clear awarded amount once user starts playing
+    setExtendedFreeSpins(0); // Clear extended free spins notification
 
     // Server will handle balance validation
     setSpinning(true);
@@ -806,8 +807,9 @@ export default function SweetBonanzaSlot() {
           // Delay showing the extension overlay so users can see the lollipops
           setTimeout(() => {
             setExtendedFreeSpins(data.freeSpinsAwarded || 0);
-            // Don't pause - just show the extension notification briefly
-            setTimeout(() => setExtendedFreeSpins(0), 3000); // Clear after 3 seconds
+            // Pause autoplay for retriggered free spins
+            setNeedsManualSpinToStartFreeSpins(true);
+            // Keep the extension notification visible (user needs to click spin to continue)
           }, 2500); // 2.5 second delay to show the lollipops
         } else {
           // Starting fresh free spins - fade out win display first, then animate lollipops
