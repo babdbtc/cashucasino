@@ -1637,13 +1637,14 @@ export default function SweetBonanzaSlot() {
                     playSound('buttonClick');
                     setBetAmount(bet);
                   }}
-                  disabled={spinning || autoplay !== null}
+                  disabled={spinning || autoplay !== null || freeSpinsRemaining > 0}
                   className={`px-3 md:px-4 py-2 md:py-3 rounded-xl font-bold text-xs md:text-sm transition-all transform ${
                     betAmount === bet
                       ? "bg-gradient-to-b from-yellow-300 to-yellow-500 text-purple-900 scale-110 shadow-lg border-2 border-yellow-200"
                       : "bg-gradient-to-b from-purple-700 to-purple-900 hover:from-purple-600 hover:to-purple-800 text-white border-2 border-purple-600"
-                  } ${(spinning || autoplay !== null) ? "opacity-50 cursor-not-allowed" : "hover:scale-105"}`}
+                  } ${(spinning || autoplay !== null || freeSpinsRemaining > 0) ? "opacity-50 cursor-not-allowed" : "hover:scale-105"}`}
                   style={betAmount === bet ? { boxShadow: '0 0 20px rgba(251, 191, 36, 0.8)' } : {}}
+                  title={freeSpinsRemaining > 0 ? "Bet amount is locked during free spins" : ""}
                 >
                   {bet}
                 </button>

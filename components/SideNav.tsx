@@ -9,11 +9,12 @@ import WalletPanel from "./WalletPanel";
 import ThemeToggle from "./ThemeToggle";
 
 const SideNav = () => {
-  const { user } = useAuth();
+  const { user, switchWalletMode } = useAuth();
   const balance = user?.balance || 0;
-  const walletMode = user?.walletMode || "demo";
+  const walletMode = user?.walletMode || "real";
   const [isWalletPanelOpen, setIsWalletPanelOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [switchingMode, setSwitchingMode] = useState(false);
   const pathname = usePathname();
 
   const navItems = [
@@ -22,6 +23,14 @@ const SideNav = () => {
     { href: "/plinko", label: "Plinko", icon: "🎯" },
     { href: "/table-games", label: "Table Games", icon: "🎲" },
   ];
+
+  const handleSwitchMode = async (newMode: "demo" | "real") => {
+    if (newMode === walletMode || switchingMode) return;
+
+    setSwitchingMode(true);
+    await switchWalletMode(newMode);
+    setSwitchingMode(false);
+  };
 
   return (
     <>
@@ -85,7 +94,7 @@ const SideNav = () => {
               <Image src="/icon.png" alt="Cashu Casino" width={64} height={64} className="rounded-lg" />
             </div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-neon-pink via-neon-purple to-neon-blue bg-clip-text text-transparent animate-gradient bg-[length:200%_auto]">
-              Cashu<span className="text-sm align-middle">.</span>Casino
+              cashucasino.cc
             </h1>
           </div>
 
@@ -104,13 +113,47 @@ const SideNav = () => {
               <div className="text-3xl font-black bg-gradient-to-r from-casino-gold to-neon-yellow bg-clip-text text-transparent mb-4">
                 {balance} <span className="text-xl">sat</span>
               </div>
+
               <button
                 onClick={() => setIsWalletPanelOpen(true)}
                 className="w-full py-3 px-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 active:scale-95
                          bg-neon-blue/20 border-2 border-neon-blue/50 hover:border-neon-blue
-                         text-white"
+                         text-white mb-3"
               >
                 💰 Wallet
+              </button>
+
+              {/* Mode Toggle Switch */}
+              <button
+                onClick={() => handleSwitchMode(walletMode === "demo" ? "real" : "demo")}
+                disabled={switchingMode}
+                className={`relative w-full h-8 rounded-lg transition-all duration-300 glass border border-white/10 ${
+                  switchingMode ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-white/20"
+                }`}
+              >
+                <div className="relative h-full flex items-center">
+                  <div className="w-1/2 flex items-center justify-center z-10">
+                    <span className={`text-xs font-semibold transition-all duration-300 ${
+                      walletMode === "demo" ? "text-white" : "text-gray-500"
+                    }`}>
+                      Demo
+                    </span>
+                  </div>
+                  <div className="w-1/2 flex items-center justify-center z-10">
+                    <span className={`text-xs font-semibold transition-all duration-300 ${
+                      walletMode === "real" ? "text-white" : "text-gray-500"
+                    }`}>
+                      Real
+                    </span>
+                  </div>
+                  <div
+                    className={`absolute top-0.5 h-[calc(100%-4px)] w-[calc(50%-4px)] rounded-md transition-all duration-300 ${
+                      walletMode === "real"
+                        ? "bg-white/20 left-[calc(50%+2px)]"
+                        : "bg-white/20 left-0.5"
+                    }`}
+                  />
+                </div>
               </button>
             </div>
           </div>
@@ -165,13 +208,13 @@ const SideNav = () => {
 
       {/* Enhanced Wallet Panel Modal */}
       {isWalletPanelOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] animate-fade-in">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] animate-fade-in p-4">
           {/* Modal backdrop with gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-neon-pink/10 via-neon-purple/10 to-neon-blue/10" />
 
           {/* Modal content */}
-          <div className="relative transform transition-all duration-500 ease-out scale-100">
-            <div className="relative glass rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl border-2 border-neon-purple/30">
+          <div className="relative transform transition-all duration-500 ease-out scale-100 w-full max-w-2xl max-h-[90vh]">
+            <div className="relative glass rounded-3xl shadow-2xl border-2 border-neon-purple/30 overflow-hidden flex flex-col max-h-[90vh]">
               {/* Close button with neon effect */}
               <button
                 onClick={() => setIsWalletPanelOpen(false)}
@@ -180,7 +223,9 @@ const SideNav = () => {
                 ✕
               </button>
 
-              <WalletPanel />
+              <div className="overflow-y-auto p-8 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                <WalletPanel />
+              </div>
             </div>
           </div>
         </div>

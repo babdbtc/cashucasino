@@ -57,8 +57,30 @@ export async function POST(req: NextRequest) {
     const gameState = getGameState(user.id, 'bonanza', walletMode);
     const isFreeSpins = gameState.freeSpinsRemaining > 0;
 
-    // Check user balance (skip for free spins)
-    if (!isFreeSpins) {
+    // SECURITY: During free spins, use the stored bet amount to prevent exploitation
+    // Users cannot change bet amount during free spins
+    let actualBetAmount = betAmount;
+    if (isFreeSpins) {
+      // Use the stored bet amount from when free spins were triggered
+      actualBetAmount = gameState.currentMultiplier; // Repurposed to store bet amount
+
+      if (actualBetAmount <= 0) {
+        // Fallback in case of corrupt data
+        console.error(`[Bonanza ${walletMode.toUpperCase()}] SECURITY: Invalid stored bet amount for user ${user.id}. Resetting free spins.`);
+        updateGameState(user.id, 'bonanza', walletMode, {
+          freeSpinsRemaining: 0,
+          currentMultiplier: 0,
+          freeSpinsTotalWin: 0
+        });
+        return NextResponse.json(
+          { error: "Free spins session expired. Please start a new game." },
+          { status: 400 }
+        );
+      }
+
+      console.log(`[Bonanza ${walletMode.toUpperCase()}] SECURITY: User ${user.id} in free spins - using stored bet amount ${actualBetAmount} sats (requested: ${betAmount})`);
+    } else {
+      // Check user balance (only for regular spins)
       const userBalance = getUserBalance(user.id, walletMode);
       if (userBalance < betAmount) {
         return NextResponse.json(
@@ -77,21 +99,23 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    console.log(`[Bonanza ${walletMode.toUpperCase()}] User ${user.id} bet ${betAmount} sats (free spins: ${isFreeSpins})`);
+    console.log(`[Bonanza ${walletMode.toUpperCase()}] User ${user.id} bet ${actualBetAmount} sats (free spins: ${isFreeSpins})`);
 
-    // Play the spin
-    const spinResult = playSpin(betAmount, isFreeSpins, false);
+    // Play the spin with the actual bet amount (stored amount during free spins)
+    const spinResult = playSpin(actualBetAmount, isFreeSpins, false);
 
     // Update game state based on spin result
     if (spinResult.triggeredFreeSpins) {
       if (!isFreeSpins) {
         // Base game: 4+ scatters triggered free spins (10 spins)
+        // SECURITY: Store the bet amount to lock it for free spins
         updateGameState(user.id, 'bonanza', walletMode, {
           freeSpinsRemaining: spinResult.freeSpinsAwarded,
+          currentMultiplier: actualBetAmount, // Store bet amount for security
           freeSpinsTotalWin: 0
         });
 
-        console.log(`[Bonanza ${walletMode.toUpperCase()}] User ${user.id} triggered ${spinResult.freeSpinsAwarded} free spins!`);
+        console.log(`[Bonanza ${walletMode.toUpperCase()}] User ${user.id} triggered ${spinResult.freeSpinsAwarded} free spins with locked bet: ${actualBetAmount} sats`);
       } else {
         // Free spins: 3+ scatters retriggered (+5 spins)
         const newFreeSpinsRemaining = gameState.freeSpinsRemaining - 1 + spinResult.freeSpinsAwarded;
@@ -99,6 +123,7 @@ export async function POST(req: NextRequest) {
 
         updateGameState(user.id, 'bonanza', walletMode, {
           freeSpinsRemaining: newFreeSpinsRemaining,
+          currentMultiplier: actualBetAmount, // Keep bet amount locked
           freeSpinsTotalWin: newTotalWin
         });
 
@@ -113,12 +138,14 @@ export async function POST(req: NextRequest) {
         // Continue free spins
         updateGameState(user.id, 'bonanza', walletMode, {
           freeSpinsRemaining: newFreeSpinsRemaining,
+          currentMultiplier: actualBetAmount, // Keep bet amount locked
           freeSpinsTotalWin: newTotalWin
         });
       } else {
-        // Free spins ended, reset state
+        // Free spins ended, reset state and unlock bet amount
         updateGameState(user.id, 'bonanza', walletMode, {
           freeSpinsRemaining: 0,
+          currentMultiplier: 0, // Clear stored bet amount
           freeSpinsTotalWin: 0
         });
 
