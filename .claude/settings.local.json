@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run dev:*)",
+      "Bash(dir:*)",
+      "Bash(chmod:*)",
+      "Bash(node:*)",
+      "Bash(cat:*)",
+      "Bash(nul)",
+      "Bash(tree:*)",
+      "Bash(npx tsx:*)",
+      "WebSearch",
+      "Bash(test:*)",
+      "Bash(timeout:*)",
+      "Bash(npx tsc:*)",
+      "Bash(findstr:*)",
+      "Bash(git clean:*)",
+      "Bash(del nul)",
+      "Bash(lib/auth.ts)",
+      "Bash(curl:*)",
+      "Bash(ping:*)",
+      "Bash(taskkill:*)",
+      "Bash(npm run build:*)",
+      "Bash(git init:*)",
+      "Bash(git config:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
