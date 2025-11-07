@@ -131,7 +131,7 @@ export default function Home() {
             {[
               { icon: "⚡", title: "Instant Play", desc: "No registration, no waiting" },
               { icon: "🔒", title: "Private", desc: "Your privacy is our priority" },
-              { icon: "💎", title: "Fun Games", desc: "Exciting casino experience" },
+              { icon: "🎲", title: "Provably Fair", desc: "Open-source RTP calculation scripts" },
               { icon: "🚀", title: "Fast Payouts", desc: "Withdraw anytime, instantly" },
             ].map((feature, i) => (
               <div

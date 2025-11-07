@@ -193,15 +193,6 @@ const SideNav = () => {
             <div className="text-xs font-semibold bg-gradient-to-r from-gray-400 to-gray-600 dark:from-gray-500 dark:to-gray-400 bg-clip-text text-transparent">
               Powered by Cashu
             </div>
-            <div className="mt-2 flex justify-center gap-1">
-              {[...Array(3)].map((_, i) => (
-                <div
-                  key={i}
-                  className="w-2 h-2 rounded-full bg-gradient-to-r from-neon-pink to-neon-blue animate-bounce"
-                  style={{ animationDelay: `${i * 0.15}s` }}
-                />
-              ))}
-            </div>
           </div>
         </div>
       </div>
