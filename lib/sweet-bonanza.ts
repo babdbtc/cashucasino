@@ -52,35 +52,37 @@ export interface SpinResult {
 }
 
 // Symbol weights for regular spins (higher = more common)
-// Flatter distribution - reduced clustering while maintaining playability
+// Flatter distribution - more gradual step-down gives better high-value clusters without reducing total cluster frequency
 const SYMBOL_WEIGHTS: Record<Exclude<Symbol, "💣">, number> = {
-  "🍌": 26,   // Banana - most common, lowest payout
-  "🫐": 23,   // Grapes - common
-  "🍉": 20,   // Watermelon - common
-  "🍇": 18,   // Plum - medium
-  "🍎": 15,   // Apple - medium
-  "💙": 13,   // Blue Candy - rare
-  "💚": 10,   // Green Candy - rare
-  "💜": 8,    // Purple Candy - very rare
-  "🍬": 6,    // Red Heart Candy - extremely rare, highest payout
+  "🍌": 23,   // Banana - most common, lowest payout (reduced from 26 to flatten)
+  "🫐": 21,   // Grapes - common (reduced from 23)
+  "🍉": 19,   // Watermelon - common (reduced from 20)
+  "🍇": 17,   // Plum - medium (reduced from 18)
+  "🍎": 16,   // Apple - medium (increased from 15)
+  "💙": 14,   // Blue Candy - medium-high (increased from 13)
+  "💚": 12,   // Green Candy - medium-high (increased from 10)
+  "💜": 10,   // Purple Candy - high (increased from 8)
+  "🍬": 7,    // Red Heart Candy - highest payout (increased from 6)
   "🍭": 2,    // Scatter - rare, triggers free spins
 };
+// Total weight: 141 (same as before to maintain cluster frequency)
 
 // Symbol weights for free spins (bombs can appear)
-// Same clustering as regular spins for consistent gameplay
+// Same flattened distribution + reduced bomb frequency
 const FREE_SPINS_SYMBOL_WEIGHTS: Record<Symbol, number> = {
-  "🍌": 26,   // Banana
-  "🫐": 23,   // Grapes
-  "🍉": 20,   // Watermelon
-  "🍇": 18,   // Plum
-  "🍎": 15,   // Apple
-  "💙": 13,   // Blue Candy
-  "💚": 10,   // Green Candy
-  "💜": 8,    // Purple Candy
-  "🍬": 6,    // Red Heart Candy
+  "🍌": 23,   // Banana (reduced from 26)
+  "🫐": 21,   // Grapes (reduced from 23)
+  "🍉": 19,   // Watermelon (reduced from 20)
+  "🍇": 17,   // Plum (reduced from 18)
+  "🍎": 16,   // Apple (increased from 15)
+  "💙": 14,   // Blue Candy (increased from 13)
+  "💚": 12,   // Green Candy (increased from 10)
+  "💜": 10,   // Purple Candy (increased from 8)
+  "🍬": 7,    // Red Heart Candy (increased from 6)
   "🍭": 2,    // Scatter
-  "💣": 9,    // Bomb - ~4.5% per position
+  "💣": 7,    // Bomb - ~4.7% per position (reduced from 9 to 7)
 };
+// Total weight: 148 (was 150 - maintains similar cluster frequency)
 
 // Payouts at original values - clustering reduction provides RTP balance
 const BASE_PAYOUTS: Record<Exclude<Symbol, "🍭" | "💣">, { symbols8: number; symbols10: number; symbols12: number }> = {
@@ -390,27 +392,11 @@ export function playSpin(betAmount: number, isFreeSpins = false, buyingFreeSpins
   // Find bombs in initial grid (free spins only)
   const initialBombs = isFreeSpins ? findBombs(initialGrid) : [];
 
-  // Count scatters on initial grid and calculate scatter payout
-  const scatterCount = countScatters(grid);
-  const scatterPayout = calculateScatterPayout(scatterCount);
+  // Track scatters across ALL grids (initial + tumbles) to properly trigger free spins
+  let totalScatterCount = countScatters(grid); // Start with initial grid scatters
+  const scatterPayout = calculateScatterPayout(totalScatterCount);
   const scatterPayoutAmount = Math.floor(betAmount * scatterPayout);
 
-  // Check free spins trigger/retrigger
-  let triggeredFreeSpins = false;
-  let freeSpinsAwarded = 0;
-
-  if (!isFreeSpins && scatterCount >= FREE_SPINS_TRIGGER) {
-    // Base game: 4+ scatters trigger free spins
-    triggeredFreeSpins = true;
-    freeSpinsAwarded = FREE_SPINS_AWARDED;
-  } else if (isFreeSpins && scatterCount >= FREE_SPINS_RETRIGGER) {
-    // Free spins: 3+ scatters retrigger (+5 spins)
-    triggeredFreeSpins = true;
-    freeSpinsAwarded = FREE_SPINS_RETRIGGER_AMOUNT;
-  }
-
-  // Collect all bombs across all tumbles (Sweet Bonanza: bombs stay visible throughout tumbles)
-  const allBombs: BombData[] = [];
   // Track all bombs we've seen to maintain consistent multipliers
   const seenBombs: BombData[] = [...initialBombs];
 
@@ -428,11 +414,10 @@ export function playSpin(betAmount: number, isFreeSpins = false, buyingFreeSpins
     const tumbleWinAmount = Math.floor(betAmount * tumbleWin);
     tumbleWinTotal += tumbleWinAmount;
 
-    // During free spins, find bombs in this tumble BEFORE tumble (for accumulation)
+    // During free spins, find bombs in current grid to track for display
     const bombsBeforeTumble = isFreeSpins ? findBombs(grid, seenBombs) : [];
-    allBombs.push(...bombsBeforeTumble);
 
-    // Update seen bombs with any new bombs from this tumble
+    // Update seen bombs with any new bombs from this tumble (to maintain consistent multipliers)
     for (const bomb of bombsBeforeTumble) {
       const key = `${bomb.position.row},${bomb.position.col}`;
       const alreadySeen = seenBombs.some(b => `${b.position.row},${b.position.col}` === key);
@@ -443,6 +428,10 @@ export function playSpin(betAmount: number, isFreeSpins = false, buyingFreeSpins
 
     // Apply tumble (remove winning symbols and drop new ones)
     grid = applyTumble(grid, clusters, isFreeSpins);
+
+    // Count scatters that appear in the new grid after tumble
+    const scattersInNewGrid = countScatters(grid);
+    totalScatterCount = Math.max(totalScatterCount, scattersInNewGrid); // Track highest scatter count seen
 
     // Find bombs AFTER tumble for correct display positions (maintain multipliers from seenBombs)
     const bombsAfterTumble = isFreeSpins ? findBombs(grid, seenBombs) : [];
@@ -461,13 +450,27 @@ export function playSpin(betAmount: number, isFreeSpins = false, buyingFreeSpins
   // Find bombs in final grid (after all tumbles) - pass seenBombs to maintain consistent multipliers
   const finalBombs = isFreeSpins ? findBombs(grid, seenBombs) : [];
 
+  // Check free spins trigger/retrigger AFTER all tumbles (using total scatter count)
+  let triggeredFreeSpins = false;
+  let freeSpinsAwarded = 0;
+
+  if (!isFreeSpins && totalScatterCount >= FREE_SPINS_TRIGGER) {
+    // Base game: 4+ scatters (across all tumbles) trigger free spins
+    triggeredFreeSpins = true;
+    freeSpinsAwarded = FREE_SPINS_AWARDED;
+  } else if (isFreeSpins && totalScatterCount >= FREE_SPINS_RETRIGGER) {
+    // Free spins: 3+ scatters (across all tumbles) retrigger (+5 spins)
+    triggeredFreeSpins = true;
+    freeSpinsAwarded = FREE_SPINS_RETRIGGER_AMOUNT;
+  }
+
   // Calculate final total win
   let totalWin = tumbleWinTotal + scatterPayoutAmount;
   let bombMultiplierTotal: number | undefined;
 
-  // Apply bomb multipliers at the END (official Sweet Bonanza logic)
-  if (isFreeSpins && allBombs.length > 0 && tumbleWinTotal > 0) {
-    bombMultiplierTotal = allBombs.reduce((sum, bomb) => sum + bomb.multiplier, 0);
+  // Apply bomb multipliers at the END using ONLY bombs on final grid (official Sweet Bonanza logic)
+  if (isFreeSpins && finalBombs.length > 0 && tumbleWinTotal > 0) {
+    bombMultiplierTotal = finalBombs.reduce((sum, bomb) => sum + bomb.multiplier, 0);
     totalWin = Math.floor(tumbleWinTotal * bombMultiplierTotal) + scatterPayoutAmount;
   }
 
@@ -478,7 +481,7 @@ export function playSpin(betAmount: number, isFreeSpins = false, buyingFreeSpins
     finalBombs,
     totalWin,
     totalBet: betAmount,
-    scatterCount,
+    scatterCount: totalScatterCount, // Return total scatter count across all tumbles
     scatterPayout: scatterPayoutAmount,
     triggeredFreeSpins,
     freeSpinsAwarded,
