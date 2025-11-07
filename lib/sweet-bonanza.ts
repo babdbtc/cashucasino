@@ -63,9 +63,9 @@ const SYMBOL_WEIGHTS: Record<Exclude<Symbol, "💣">, number> = {
   "💚": 12,   // Green Candy - rare (boosted from original 10)
   "💜": 10,   // Purple Candy - very rare (boosted from original 8)
   "🍬": 8,    // Red Heart Candy - extremely rare (boosted from original 6)
-  "🍭": 4,    // Scatter - rare, triggers free spins
+  "🍭": 3.7,  // Scatter - rare, triggers free spins
 };
-// Total weight: 191 (high weight + steep curve = frequent clusters with some high-value wins)
+// Total weight: 190.7 (high weight + steep curve = frequent clusters with some high-value wins)
 
 // Symbol weights for free spins (bombs can appear)
 // Same steep distribution for cluster formation + reduced bomb frequency
@@ -79,10 +79,10 @@ const FREE_SPINS_SYMBOL_WEIGHTS: Record<Symbol, number> = {
   "💚": 12,   // Green Candy
   "💜": 10,   // Purple Candy
   "🍬": 8,    // Red Heart Candy
-  "🍭": 4,    // Scatter
+  "🍭": 3.7,  // Scatter
   "💣": 7,    // Bomb - ~3.5% per position
 };
-// Total weight: 198 (high weight + steep curve = frequent clusters)
+// Total weight: 197.7 (high weight + steep curve = frequent clusters)
 
 // Payouts - slightly increased for more rewarding cluster wins
 const BASE_PAYOUTS: Record<Exclude<Symbol, "🍭" | "💣">, { symbols8: number; symbols10: number; symbols12: number }> = {
