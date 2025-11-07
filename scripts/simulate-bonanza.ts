@@ -94,7 +94,9 @@ function runSimulation(numSpins: number, betAmount: number): SimulationStats {
 
     // Update basic stats
     stats.totalSpins++;
-    stats.totalBet += betAmount;
+    if (!isFreeSpins) {
+      stats.totalBet += betAmount; // Only charge for regular spins, not free spins
+    }
     stats.totalWon += result.totalWin;
 
     if (result.totalWin > 0) {
