@@ -1,0 +1,134 @@
+{
+  "info": {
+    "name": "Gamble BABD Casino API",
+    "description": "Admin API for managing the Cashu casino",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "admin_api_key",
+      "value": "your-admin-api-key-here",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Check Wallet Balance",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_api_key}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/admin/wallet",
+          "host": ["{{base_url}}"],
+          "path": ["api", "admin", "wallet"]
+        },
+        "description": "Get current house wallet balance and statistics"
+      }
+    },
+    {
+      "name": "Fund Wallet",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"token\": \"cashuAeyJ0b2tlbiI6W3sicHJvb2ZzIjpbXSwibWludCI6Imh0dHBzOi8vbWludC5taW5pYml0cy5jYXNoL0JpdGNvaW4ifV19\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/admin/wallet",
+          "host": ["{{base_url}}"],
+          "path": ["api", "admin", "wallet"]
+        },
+        "description": "Add funds to the house wallet by providing a Cashu token"
+      }
+    },
+    {
+      "name": "Withdraw Funds",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"amount\": 100\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/admin/withdraw",
+          "host": ["{{base_url}}"],
+          "path": ["api", "admin", "withdraw"]
+        },
+        "description": "Withdraw funds from house wallet. Returns a Cashu token to paste into your wallet."
+      }
+    },
+    {
+      "name": "Play Slots",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"token\": \"cashuAeyJ0b2tlbiI6W3sicHJvb2ZzIjpbXSwibWludCI6Imh0dHBzOi8vbWludC5taW5pYml0cy5jYXNoL0JpdGNvaW4ifV19\",\n  \"betAmount\": 10\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/slots/play",
+          "host": ["{{base_url}}"],
+          "path": ["api", "slots", "play"]
+        },
+        "description": "Play a slot machine spin. Provide a Cashu token and bet amount."
+      }
+    }
+  ]
+}
