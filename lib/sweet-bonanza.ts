@@ -107,14 +107,14 @@ const SCATTER_PAYOUTS: Record<number, number> = {
 // Bomb multiplier values (official values from Pragmatic Play)
 const BOMB_MULTIPLIER_VALUES = [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80, 100];
 
-// Bomb multiplier distribution - balanced across all ranges for rewarding free spins
-// ~40% low (2x-6x), ~35% mid (8x-15x), ~15% high (20x-30x), ~10% very high (40x+)
+// Bomb multiplier distribution - low multipliers more common, very high multipliers rare
+// ~45% low (2x-6x), ~33% mid (8x-15x), ~15% high (20x-30x), ~7% very high (40x+)
 const BOMB_WEIGHTS = [
-  40, 35, 32, 30, 28,  // 2x-6x (common - 40% combined)
-  35, 32, 28, 25,      // 8x-15x (common - 35% combined)
+  45, 40, 36, 34, 32,  // 2x-6x (very common - 45% combined, increased)
+  35, 32, 28, 25,      // 8x-15x (common - 33% combined)
   18, 14, 10,          // 20x-30x (uncommon - 15% combined)
-  8, 6,                // 40x-50x (rare - 5%)
-  4, 3, 3              // 60x-100x (very rare - 5%)
+  5, 4,                // 40x-50x (rare - 4%)
+  2, 1, 1              // 60x-100x (very rare - 3%)
 ];
 
 const ROWS = 5;
