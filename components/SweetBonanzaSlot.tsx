@@ -1784,81 +1784,81 @@ export default function SweetBonanzaSlot() {
           <div className="bg-gradient-to-br from-pink-800 to-purple-900 p-3 rounded-2xl border-2 border-yellow-400/60 hover:border-yellow-400 transition-all transform hover:scale-105 shadow-lg"
                style={{ background: getSymbolBackground("🍬") }}>
             <div className="text-3xl mb-1 drop-shadow-lg">🍬</div>
-            <div className="text-xs text-white font-black">8-9: 10x</div>
-            <div className="text-xs text-white font-black">10-11: 25x</div>
-            <div className="text-xs text-white font-black">12+: 50x</div>
+            <div className="text-xs text-white font-black">8-9: 12x</div>
+            <div className="text-xs text-white font-black">10-11: 30x</div>
+            <div className="text-xs text-white font-black">12+: 60x</div>
           </div>
 
           {/* Purple Candy */}
           <div className="bg-gradient-to-br from-pink-800 to-purple-900 p-3 rounded-2xl border-2 border-yellow-400/40 hover:border-yellow-400 transition-all transform hover:scale-105 shadow-lg"
                style={{ background: getSymbolBackground("💜") }}>
             <div className="text-3xl mb-1 drop-shadow-lg">💜</div>
-            <div className="text-xs text-white font-bold">8-9: 2.5x</div>
-            <div className="text-xs text-white font-bold">10-11: 10x</div>
-            <div className="text-xs text-white font-bold">12+: 25x</div>
+            <div className="text-xs text-white font-bold">8-9: 3x</div>
+            <div className="text-xs text-white font-bold">10-11: 12x</div>
+            <div className="text-xs text-white font-bold">12+: 30x</div>
           </div>
 
           {/* Green Candy */}
           <div className="bg-gradient-to-br from-pink-800 to-purple-900 p-3 rounded-2xl border-2 border-yellow-400/40 hover:border-yellow-400 transition-all transform hover:scale-105 shadow-lg"
                style={{ background: getSymbolBackground("💚") }}>
             <div className="text-3xl mb-1 drop-shadow-lg">💚</div>
-            <div className="text-xs text-white font-bold">8-9: 2x</div>
-            <div className="text-xs text-white font-bold">10-11: 5x</div>
-            <div className="text-xs text-white font-bold">12+: 15x</div>
+            <div className="text-xs text-white font-bold">8-9: 2.4x</div>
+            <div className="text-xs text-white font-bold">10-11: 6x</div>
+            <div className="text-xs text-white font-bold">12+: 18x</div>
           </div>
 
           {/* Blue Candy */}
           <div className="bg-gradient-to-br from-pink-800 to-purple-900 p-3 rounded-2xl border-2 border-yellow-400/40 hover:border-yellow-400 transition-all transform hover:scale-105 shadow-lg"
                style={{ background: getSymbolBackground("💙") }}>
             <div className="text-3xl mb-1 drop-shadow-lg">💙</div>
-            <div className="text-xs text-white font-bold">8-9: 1.5x</div>
-            <div className="text-xs text-white font-bold">10-11: 2x</div>
-            <div className="text-xs text-white font-bold">12+: 12x</div>
+            <div className="text-xs text-white font-bold">8-9: 1.8x</div>
+            <div className="text-xs text-white font-bold">10-11: 2.5x</div>
+            <div className="text-xs text-white font-bold">12+: 14x</div>
           </div>
 
           {/* Red Apple */}
           <div className="bg-gradient-to-br from-pink-800 to-purple-900 p-3 rounded-2xl border-2 border-yellow-400/40 hover:border-yellow-400 transition-all transform hover:scale-105 shadow-lg"
                style={{ background: getSymbolBackground("🍎") }}>
             <div className="text-3xl mb-1 drop-shadow-lg">🍎</div>
-            <div className="text-xs text-white font-bold">8-9: 1x</div>
-            <div className="text-xs text-white font-bold">10-11: 1.5x</div>
-            <div className="text-xs text-white font-bold">12+: 10x</div>
+            <div className="text-xs text-white font-bold">8-9: 1.2x</div>
+            <div className="text-xs text-white font-bold">10-11: 1.8x</div>
+            <div className="text-xs text-white font-bold">12+: 12x</div>
           </div>
 
           {/* Purple Plum */}
           <div className="bg-gradient-to-br from-pink-800 to-purple-900 p-3 rounded-2xl border-2 border-yellow-400/40 hover:border-yellow-400 transition-all transform hover:scale-105 shadow-lg"
                style={{ background: getSymbolBackground("🍇") }}>
             <div className="text-3xl mb-1 drop-shadow-lg">🍇</div>
-            <div className="text-xs text-white font-bold">8-9: 0.8x</div>
-            <div className="text-xs text-white font-bold">10-11: 1.2x</div>
-            <div className="text-xs text-white font-bold">12+: 8x</div>
+            <div className="text-xs text-white font-bold">8-9: 1x</div>
+            <div className="text-xs text-white font-bold">10-11: 1.5x</div>
+            <div className="text-xs text-white font-bold">12+: 10x</div>
           </div>
 
           {/* Green Watermelon */}
           <div className="bg-gradient-to-br from-pink-800 to-purple-900 p-3 rounded-2xl border-2 border-yellow-400/40 hover:border-yellow-400 transition-all transform hover:scale-105 shadow-lg"
                style={{ background: getSymbolBackground("🍉") }}>
             <div className="text-3xl mb-1 drop-shadow-lg">🍉</div>
-            <div className="text-xs text-purple-900 font-bold">8-9: 0.5x</div>
-            <div className="text-xs text-purple-900 font-bold">10-11: 1x</div>
-            <div className="text-xs text-purple-900 font-bold">12+: 5x</div>
+            <div className="text-xs text-purple-900 font-bold">8-9: 0.6x</div>
+            <div className="text-xs text-purple-900 font-bold">10-11: 1.2x</div>
+            <div className="text-xs text-purple-900 font-bold">12+: 6x</div>
           </div>
 
           {/* Purple Grapes */}
           <div className="bg-gradient-to-br from-pink-800 to-purple-900 p-3 rounded-2xl border-2 border-yellow-400/40 hover:border-yellow-400 transition-all transform hover:scale-105 shadow-lg"
                style={{ background: getSymbolBackground("🫐") }}>
             <div className="text-3xl mb-1 drop-shadow-lg">🫐</div>
-            <div className="text-xs text-purple-900 font-bold">8-9: 0.4x</div>
-            <div className="text-xs text-purple-900 font-bold">10-11: 0.9x</div>
-            <div className="text-xs text-purple-900 font-bold">12+: 4x</div>
+            <div className="text-xs text-purple-900 font-bold">8-9: 0.5x</div>
+            <div className="text-xs text-purple-900 font-bold">10-11: 1.1x</div>
+            <div className="text-xs text-purple-900 font-bold">12+: 5x</div>
           </div>
 
           {/* Yellow Banana - Lowest */}
           <div className="bg-gradient-to-br from-pink-800 to-purple-900 p-3 rounded-2xl border-2 border-yellow-400/40 hover:border-yellow-400 transition-all transform hover:scale-105 shadow-lg"
                style={{ background: getSymbolBackground("🍌") }}>
             <div className="text-3xl mb-1 drop-shadow-lg">🍌</div>
-            <div className="text-xs text-purple-900 font-bold">8-9: 0.25x</div>
-            <div className="text-xs text-purple-900 font-bold">10-11: 0.75x</div>
-            <div className="text-xs text-purple-900 font-bold">12+: 2x</div>
+            <div className="text-xs text-purple-900 font-bold">8-9: 0.3x</div>
+            <div className="text-xs text-purple-900 font-bold">10-11: 0.9x</div>
+            <div className="text-xs text-purple-900 font-bold">12+: 2.5x</div>
           </div>
 
           {/* Scatter - Special */}
@@ -1883,7 +1883,7 @@ export default function SweetBonanzaSlot() {
           </p>
         </div>
         <p className="text-yellow-200 text-xs text-center mt-6 font-semibold relative z-10">
-          ⚡ RTP: ~96.5% • Scatter Pays (8+ symbols ANYWHERE) • Tumble Feature • Bomb Multipliers in Free Spins ⚡
+          ⚡ RTP: ~95.5% • Scatter Pays (8+ symbols ANYWHERE) • Tumble Feature • Bomb Multipliers in Free Spins ⚡
         </p>
       </div>
     </div>
