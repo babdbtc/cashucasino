@@ -24,7 +24,9 @@
       "Bash(taskkill:*)",
       "Bash(npm run build:*)",
       "Bash(git init:*)",
-      "Bash(git config:*)"
+      "Bash(git config:*)",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)"
     ],
     "deny": [],
     "ask": []

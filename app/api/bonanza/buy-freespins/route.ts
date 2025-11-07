@@ -81,12 +81,14 @@ export async function POST(req: NextRequest) {
     if (spinResult.triggeredFreeSpins) {
       const freeSpinsAwarded = spinResult.freeSpinsAwarded;
 
+      // SECURITY: Store the bet amount to lock it for free spins
       updateGameState(user.id, 'bonanza', walletMode, {
         freeSpinsRemaining: freeSpinsAwarded,
+        currentMultiplier: betAmount, // Store bet amount for security
         freeSpinsTotalWin: 0
       });
 
-      console.log(`[Bonanza ${walletMode.toUpperCase()}] User ${user.id} triggered ${freeSpinsAwarded} free spins from purchase`);
+      console.log(`[Bonanza ${walletMode.toUpperCase()}] User ${user.id} triggered ${freeSpinsAwarded} free spins from purchase with locked bet: ${betAmount} sats`);
     }
 
     // If there was a win on the purchase spin, add it to balance

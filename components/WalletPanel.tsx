@@ -6,7 +6,7 @@ import { useAuth, type WalletMode } from "@/lib/auth-context";
 export default function WalletPanel() {
   const { user, updateBalance, refreshUser, switchWalletMode } = useAuth();
   const balance = user?.balance || 0;
-  const walletMode = user?.walletMode || "demo";
+  const walletMode = user?.walletMode || "real";
 
   const [depositToken, setDepositToken] = useState("");
   const [withdrawToken, setWithdrawToken] = useState("");
@@ -283,7 +283,7 @@ export default function WalletPanel() {
     : "testnut.cashu.space";
 
   return (
-    <div className="relative max-h-[85vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+    <div className="relative">
       {/* Header Section */}
       <div className="mb-6">
         <h2 className="text-3xl font-black mb-2 bg-gradient-to-r from-neon-pink via-neon-purple to-neon-blue bg-clip-text text-transparent">
@@ -292,39 +292,38 @@ export default function WalletPanel() {
       </div>
 
       {/* Wallet Mode Toggle */}
-      <div className="mb-6 glass rounded-2xl p-4 border border-white/10">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-semibold text-gray-400 dark:text-gray-500 mb-1">Wallet Mode</p>
-            <p className="text-xs text-gray-600 dark:text-gray-500">
-              {walletMode === "demo" ? "Test tokens only" : "Real Bitcoin"}
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => handleSwitchMode("demo")}
-              disabled={switchingMode}
-              className={`px-4 py-2 rounded-xl font-bold transition-all duration-300 ${
-                walletMode === "demo"
-                  ? "bg-neon-blue text-white border-2 border-neon-blue"
-                  : "glass border border-white/10 hover:border-neon-blue/50"
-              } ${switchingMode ? "opacity-50 cursor-not-allowed" : ""}`}
-            >
-              Demo
-            </button>
-            <button
-              onClick={() => handleSwitchMode("real")}
-              disabled={switchingMode}
-              className={`px-4 py-2 rounded-xl font-bold transition-all duration-300 ${
+      <div className="mb-6">
+        <button
+          onClick={() => handleSwitchMode(walletMode === "demo" ? "real" : "demo")}
+          disabled={switchingMode}
+          className={`relative w-full h-10 rounded-lg transition-all duration-300 glass border border-white/10 ${
+            switchingMode ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-white/20"
+          }`}
+        >
+          <div className="relative h-full flex items-center">
+            <div className="w-1/2 flex items-center justify-center z-10">
+              <span className={`text-sm font-semibold transition-all duration-300 ${
+                walletMode === "demo" ? "text-white" : "text-gray-500"
+              }`}>
+                Demo
+              </span>
+            </div>
+            <div className="w-1/2 flex items-center justify-center z-10">
+              <span className={`text-sm font-semibold transition-all duration-300 ${
+                walletMode === "real" ? "text-white" : "text-gray-500"
+              }`}>
+                Real
+              </span>
+            </div>
+            <div
+              className={`absolute top-0.5 h-[calc(100%-4px)] w-[calc(50%-4px)] rounded-md transition-all duration-300 ${
                 walletMode === "real"
-                  ? "bg-gradient-to-r from-neon-green to-casino-gold text-white border-2 border-casino-gold"
-                  : "glass border border-white/10 hover:border-casino-gold/50"
-              } ${switchingMode ? "opacity-50 cursor-not-allowed" : ""}`}
-            >
-              Real
-            </button>
+                  ? "bg-white/20 left-[calc(50%+2px)]"
+                  : "bg-white/20 left-0.5"
+              }`}
+            />
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Balance Card */}
@@ -347,7 +346,12 @@ export default function WalletPanel() {
       {/* Action Buttons */}
       <div className="grid grid-cols-2 gap-4 mb-6">
         <button
-          onClick={() => setShowDeposit(!showDeposit)}
+          onClick={() => {
+            setShowDeposit(true);
+            setShowWithdrawInput(false);
+            setShowWithdraw(false);
+            setShowNostrWithdraw(false);
+          }}
           className="bg-neon-blue/20 border-2 border-neon-blue hover:border-neon-purple text-white px-6 py-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -357,7 +361,17 @@ export default function WalletPanel() {
         </button>
 
         <button
-          onClick={handleWithdrawAll}
+          onClick={() => {
+            if (balance === 0) {
+              setMessage("❌ No balance to withdraw");
+              return;
+            }
+            setWithdrawAmount(balance.toString());
+            setShowWithdrawInput(true);
+            setShowDeposit(false);
+            setShowWithdraw(false);
+            setShowNostrWithdraw(false);
+          }}
           disabled={balance === 0}
           className={`bg-neon-purple/20 border-2 border-neon-purple hover:border-neon-pink text-white px-6 py-4 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 ${
             balance === 0 ? 'opacity-50 cursor-not-allowed' : 'transform hover:scale-105'
@@ -370,8 +384,8 @@ export default function WalletPanel() {
         </button>
       </div>
 
-      {/* Nostr Quick Actions - Show only if user has Nostr account */}
-      {hasNostrAccount && (
+      {/* Nostr Quick Actions - Show only if user has Nostr account and withdraw is selected */}
+      {hasNostrAccount && showWithdrawInput && (
         <div className="mb-6 glass rounded-2xl p-4 border border-purple-500/30">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-xl">💜</span>
@@ -615,7 +629,7 @@ export default function WalletPanel() {
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={copyWithdrawToken}
-              className="bg-gradient-to-r from-neon-green to-neon-blue text-white px-6 py-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
+              className="bg-neon-green text-white px-6 py-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
             >
               {copied ? (
                 <>

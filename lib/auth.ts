@@ -57,18 +57,18 @@ export function createUser(): string {
 
   const now = Date.now();
 
-  // Create user in both demo and real databases with default mode as demo
+  // Create user in both demo and real databases with default mode as real
   const demoDb = getDatabase("demo");
   const realDb = getDatabase("real");
 
   demoDb.prepare(`
     INSERT INTO users (account_id, balance, wallet_mode, created_at)
-    VALUES (?, 0, 'demo', ?)
+    VALUES (?, 0, 'real', ?)
   `).run(normalized, now);
 
   realDb.prepare(`
     INSERT INTO users (account_id, balance, wallet_mode, created_at)
-    VALUES (?, 0, 'demo', ?)
+    VALUES (?, 0, 'real', ?)
   `).run(normalized, now);
 
   console.log(`[Auth] Created new user with ID: ${accountId}`);
@@ -592,12 +592,12 @@ export function loginOrCreateNostrUser(nostrPubkey: string): User {
   // Create in both databases
   demoDb.prepare(`
     INSERT INTO users (account_id, nostr_pubkey, balance, wallet_mode, created_at, last_login)
-    VALUES (?, ?, 10000, 'demo', ?, ?)
+    VALUES (?, ?, 10000, 'real', ?, ?)
   `).run(normalized, nostrPubkey, now, now);
 
   realDb.prepare(`
     INSERT INTO users (account_id, nostr_pubkey, balance, wallet_mode, created_at, last_login)
-    VALUES (?, ?, 0, 'demo', ?, ?)
+    VALUES (?, ?, 0, 'real', ?, ?)
   `).run(normalized, nostrPubkey, now, now);
 
   console.log("[Auth] New Nostr user created:", nostrPubkey.substring(0, 8) + "...");
