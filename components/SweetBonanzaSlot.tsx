@@ -1154,6 +1154,11 @@ export default function SweetBonanzaSlot() {
           <div className="absolute bottom-48 left-20 text-5xl opacity-35 animate-float" style={{ animationDelay: '3.5s' }}>🍬</div>
         </div>
 
+        {/* RTP - Top Left */}
+        <div className="absolute top-4 left-4 z-20 text-sm font-semibold text-white/75">
+          RTP: ~95.5%
+        </div>
+
         {/* Sound Button - Top Right */}
         <button
           onClick={() => {
