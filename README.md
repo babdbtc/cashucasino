@@ -1,40 +1,43 @@
 # Cashu Casino
 
+**Live at: [cashucasino.cc](https://cashucasino.cc)**
+
 A privacy-focused online casino powered by Cashu ecash. Play provably fair casino games with Bitcoin through Cashu tokens - minimal registration, instant deposits/withdrawals, and complete transparency.
 
-## 🎮 Features
+> **⚠️ WORK IN PROGRESS**: This project is under active development. Bugs may exist, and deposited funds could be irreversibly lost due to software errors or mint issues. **Only deposit amounts you are completely comfortable losing.** Use at your own risk.
+
+## Features
 
 ### Authentication & Privacy
-- **💜 Nostr Login**: One-click authentication using your Nostr identity (Alby, nos2x, etc.) via NIP-07
-- **🔑 Simple Account System**: Or create an account with just a 16-digit ID - no email, no password, no personal info
-- **🔒 Privacy First**: No KYC, no tracking, minimal data collection
-- **🌐 Cross-Tab Sync**: Your balance and wallet mode sync automatically across browser tabs
+- **Nostr Login**: One-click authentication using your Nostr identity (Alby, nos2x, etc.) via NIP-07
+- **Simple Account System**: Or create an account with just a 16-digit ID - no email, no password, no personal info
+- **Privacy First**: No KYC, no tracking, minimal data collection
+- **Cross-Tab Sync**: Your balance and wallet mode sync automatically across browser tabs
 
 ### Wallet & Payments
-- **⚡ Dual Wallet System**:
+- **Dual Wallet System**:
   - **Demo Mode**: Play with test tokens from testnut.cashu.space
   - **Real Mode**: Play with real Bitcoin via mint.minibits.cash
-- **💸 Instant Deposits**: Paste Cashu token and start playing immediately
-- **🚀 Multiple Withdrawal Methods**:
+- **Instant Deposits**: Paste Cashu token and start playing immediately
+- **Multiple Withdrawal Methods**:
   - **Standard**: Generate Cashu token string to copy/paste into your wallet
   - **Nostr Instant Withdraw**: Automatic delivery to your Nostr wallet via encrypted DM (for Nostr-authenticated users)
   - **Nutzap Support**: Withdraw via Nostr zap protocol
-- **💰 Custodial**: Deposit funds to your account balance, play multiple games, withdraw anytime
+- **Custodial**: Deposit funds to your account balance, play multiple games, withdraw anytime
 
 ### Games
-- **🍬 Sweet Bonanza Slots**: 6x5 cluster pays slot with tumble mechanic, free spins, and multipliers (RTP: ~95.5%)
-- **🎯 Plinko**: Drop the ball through 16 rows of pegs with three risk levels (Low/Medium/High) and multipliers up to 1000x
-- **🃏 Blackjack**: Classic 21 with standard rules (Coming Soon)
-- **🎰 Classic Slots**: 3x3 slot machine with 90% RTP
+- **Sweet Bonanza Slots**: 6x5 cluster pays slot with tumble mechanic, free spins, and multipliers (RTP: ~95.5%)
+- **Plinko**: Drop the ball through 16 rows of pegs with three risk levels (Low/Medium/High) and multipliers up to 1000x
+- **Blackjack**: Classic 21 with standard rules (Coming Soon)
 
 ### Provably Fair
-- **🎲 Cryptographic RNG**: Uses Node.js `crypto.randomBytes()` for secure randomness
-- **📊 Open Source RTP Scripts**: All payout calculations available on GitHub
-- **🔍 Transparent Mechanics**: Full game logic visible in source code
+- **Cryptographic RNG**: Uses Node.js `crypto.randomBytes()` for secure randomness
+- **Open Source RTP Scripts**: All payout calculations available on GitHub
+- **Transparent Mechanics**: Full game logic visible in source code
 
-## 🎰 Available Games
+## Available Games
 
-### Sweet Bonanza 🍬
+### Sweet Bonanza
 - **Type**: 6x5 cluster pays slot with tumble mechanic
 - **RTP**: ~95.5% (4.5% house edge)
 - **Min Bet**: 1 sat
@@ -49,18 +52,18 @@ A privacy-focused online casino powered by Cashu ecash. Play provably fair casin
   - **Autoplay**: Up to 500 automatic spins with customizable settings
 
 **Paytable** (8+ symbols):
-- 🍬 Red Heart: 8-9 = 12x | 10-11 = 30x | 12+ = 60x
-- 💜 Purple Candy: 8-9 = 10x | 10-11 = 25x | 12+ = 50x
-- 💚 Green Candy: 8-9 = 8x | 10-11 = 20x | 12+ = 40x
-- 💙 Blue Candy: 8-9 = 6x | 10-11 = 15x | 12+ = 30x
-- 🍎 Apple: 8-9 = 4x | 10-11 = 10x | 12+ = 25x
-- 🍇 Grapes: 8-9 = 3x | 10-11 = 8x | 12+ = 20x
-- 🍉 Watermelon: 8-9 = 2x | 10-11 = 6x | 12+ = 15x
-- 🫐 Blueberry: 8-9 = 1.5x | 10-11 = 4x | 12+ = 10x
-- 🍌 Banana: 8-9 = 1x | 10-11 = 3x | 12+ = 8x
-- 🍭 Scatter: 4+ triggers 10 free spins
+- Red Heart: 8-9 = 12x | 10-11 = 30x | 12+ = 60x
+- Purple Candy: 8-9 = 10x | 10-11 = 25x | 12+ = 50x
+- Green Candy: 8-9 = 8x | 10-11 = 20x | 12+ = 40x
+- Blue Candy: 8-9 = 6x | 10-11 = 15x | 12+ = 30x
+- Apple: 8-9 = 4x | 10-11 = 10x | 12+ = 25x
+- Grapes: 8-9 = 3x | 10-11 = 8x | 12+ = 20x
+- Watermelon: 8-9 = 2x | 10-11 = 6x | 12+ = 15x
+- Blueberry: 8-9 = 1.5x | 10-11 = 4x | 12+ = 10x
+- Banana: 8-9 = 1x | 10-11 = 3x | 12+ = 8x
+- Scatter: 4+ triggers 10 free spins
 
-### Plinko 🎯
+### Plinko
 - **Type**: Probability-based ball drop game
 - **Rows**: 16 pegs, 17 multiplier slots
 - **Risk Levels**:
@@ -75,22 +78,7 @@ A privacy-focused online casino powered by Cashu ecash. Play provably fair casin
 - Medium: [110, 41, 10, 5, 3, 1.5, 1, 0.5, 0.3, 0.5, 1, 1.5, 3, 5, 10, 41, 110]
 - High: [1000, 130, 26, 9, 4, 2, 0.2, 0.2, 0.2, 0.2, 0.2, 2, 4, 9, 26, 130, 1000]
 
-### Classic Slots 🎰
-- **Type**: 3x3 traditional slot machine
-- **RTP**: 90.4% (9.6% house edge)
-- **Min Bet**: 1 sat
-- **Max Bet**: 1000 sats
-- **Payline**: Middle row only
-
-**Paytable**:
-- 7️⃣ 7️⃣ 7️⃣ = 777x (JACKPOT!)
-- 💎 💎 💎 = 150x
-- 🔔 🔔 🔔 = 40x
-- 🍊 🍊 🍊 = 20x
-- 🍋 🍋 🍋 = 13x
-- 🍒 🍒 🍒 = 8x
-
-## 🔐 Authentication Methods
+## Authentication Methods
 
 ### Nostr Login (Recommended)
 
@@ -107,10 +95,10 @@ Cashu Casino integrates deeply with Nostr for seamless, privacy-preserving authe
 4. Instant access - no passwords, no email verification
 
 **Benefits**:
-- ⚡ One-click login across devices (if using same Nostr identity)
-- 💸 Instant withdrawals to your Nostr wallet via encrypted DM
-- 🔒 Maximum privacy - Nostr is decentralized
-- 🎯 Future features: Social sharing, leaderboards, zaps
+- One-click login across devices (if using same Nostr identity)
+- Instant withdrawals to your Nostr wallet via encrypted DM
+- Maximum privacy - Nostr is decentralized
+- Future features: Social sharing, leaderboards, zaps
 
 **Nostr Integration Details**:
 - **NIP-07**: Browser extension interface for signing
@@ -127,12 +115,12 @@ Cashu Casino integrates deeply with Nostr for seamless, privacy-preserving authe
 4. No password, no email, no recovery mechanism
 
 **Important**:
-- ⚠️ Your account ID is both your username AND password
-- 📝 Save it somewhere safe (password manager, encrypted note, etc.)
-- 🔒 Never share it with anyone
-- 💀 If you lose it, your account is gone forever
+- Your account ID is both your username AND password
+- Save it somewhere safe (password manager, encrypted note, etc.)
+- Never share it with anyone
+- If you lose it, your account is gone forever
 
-## 💰 How to Deposit & Play
+## How to Deposit & Play
 
 ### Step 1: Get Cashu Tokens
 
@@ -169,7 +157,7 @@ Cashu Casino integrates deeply with Nostr for seamless, privacy-preserving authe
 4. Winnings automatically added to your balance
 5. Play multiple times without re-depositing
 
-## 💸 How to Withdraw
+## How to Withdraw
 
 ### Method 1: Standard Withdrawal (All Users)
 
@@ -193,11 +181,6 @@ Cashu Casino integrates deeply with Nostr for seamless, privacy-preserving authe
 3. Enter amount (or click **Withdraw All**)
 4. Click **Send to Nostr Wallet**
 5. Casino sends encrypted DM to your Nostr public key with Cashu token
-6. Token automatically appears in your Nostr-compatible wallet!
-
-**Supported Wallets**:
-- Minibits (with Nostr integration)
-- Any wallet monitoring Nostr DMs for Cashu tokens
 
 **Fallback**: If DM delivery fails, you'll receive the token as standard withdrawal
 
@@ -205,7 +188,7 @@ Cashu Casino integrates deeply with Nostr for seamless, privacy-preserving authe
 
 Withdraw using Nostr Zap protocol with Cashu tokens.
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 ### Frontend
 - **Framework**: Next.js 15 (App Router)
@@ -236,7 +219,7 @@ Withdraw using Nostr Zap protocol with Cashu tokens.
 - **Authentication**: JWT tokens in HTTP-only cookies
 - **Encryption**: Nostr NIP-04 for DMs
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -303,64 +286,7 @@ npm run build
 npm start
 ```
 
-## 📁 Project Structure
-
-```
-gamble.babd/
-├── app/                          # Next.js 15 App Router
-│   ├── api/                      # API Routes
-│   │   ├── auth/                 # Authentication endpoints
-│   │   │   ├── login/            # Account ID login
-│   │   │   ├── register/         # Account creation
-│   │   │   ├── nostr-login/      # Nostr NIP-98 auth
-│   │   │   ├── logout/           # Session termination
-│   │   │   └── me/               # Get current user
-│   │   ├── balance/              # Wallet operations
-│   │   │   ├── deposit/          # Cashu token deposit
-│   │   │   ├── withdraw/         # Standard withdrawal
-│   │   │   ├── withdraw-nostr/   # Nostr instant withdraw
-│   │   │   └── withdraw-nutzap/  # Nutzap withdrawal
-│   │   ├── bonanza/              # Sweet Bonanza game
-│   │   │   ├── play/             # Spin endpoint
-│   │   │   └── buy-freespins/    # Purchase free spins
-│   │   ├── plinko/               # Plinko game
-│   │   │   └── play/             # Drop ball endpoint
-│   │   ├── slots/                # Classic slots
-│   │   │   └── play/             # Spin endpoint
-│   │   └── blackjack/            # Blackjack game
-│   │       └── ...
-│   ├── page.tsx                  # Homepage
-│   ├── slots/                    # Slots games
-│   │   ├── page.tsx              # Classic slots
-│   │   └── sweet-bonanza/        # Sweet Bonanza
-│   ├── plinko/                   # Plinko game
-│   └── table-games/              # Table games
-│       └── blackjack/            # Blackjack
-├── components/                   # React components
-│   ├── SweetBonanzaSlot.tsx      # Sweet Bonanza game UI
-│   ├── PlinkoGame.tsx            # Plinko game UI
-│   ├── SlotMachine.tsx           # Classic slots UI
-│   ├── WalletPanel.tsx           # Deposit/withdraw UI
-│   ├── AuthModal.tsx             # Login/register modal
-│   ├── SideNav.tsx               # Navigation sidebar
-│   └── ...
-├── lib/                          # Core logic
-│   ├── auth-context.tsx          # Authentication provider
-│   ├── sweet-bonanza.ts          # Sweet Bonanza game engine
-│   ├── plinko.ts                 # Plinko game engine
-│   ├── slots.ts                  # Classic slots engine
-│   ├── db.ts                     # SQLite database
-│   ├── nostr.ts                  # Nostr integration
-│   └── ...
-├── scripts/                      # RTP simulation tools
-│   ├── simulate-bonanza.ts       # Sweet Bonanza RTP calculator
-│   ├── simulate-buy-freespins.ts # Free spins purchase analysis
-│   └── README-SIMULATION.md      # Simulation documentation
-├── .env.example                  # Environment template
-└── README.md                     # This file
-```
-
-## 🔒 Security & Fairness
+## Security & Fairness
 
 ### Provably Fair Gaming
 - **Cryptographic RNG**: All games use `crypto.randomBytes()` from Node.js
@@ -391,7 +317,7 @@ gamble.babd/
 - Balance updates validated server-side
 - Bet limits enforced (1-1000 sats)
 
-## 📊 RTP Transparency
+## RTP Transparency
 
 All games have their RTP (Return to Player) calculated and verified through Monte Carlo simulations.
 
@@ -409,12 +335,11 @@ npx tsx scripts/simulate-bonanza.ts
 
 ### Current RTPs
 - **Sweet Bonanza**: ~95.5% (4.5% house edge)
-- **Classic Slots**: 90.4% (9.6% house edge)
 - **Plinko**: Varies by risk level (theoretical)
 
 **Transparency**: All RTP calculations are open-source on GitHub.
 
-## 🚢 Deployment
+## Deployment
 
 See [DEPLOYMENT.md](./docs/DEPLOYMENT.md) for detailed VPS deployment instructions.
 
@@ -426,7 +351,7 @@ See [DEPLOYMENT.md](./docs/DEPLOYMENT.md) for detailed VPS deployment instructio
 5. Configure production environment variables
 6. Initialize SQLite database
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please follow these guidelines:
 
@@ -445,11 +370,10 @@ Contributions are welcome! Please follow these guidelines:
 - Test all payment flows (deposit/withdraw)
 - Verify Nostr integration works with multiple extensions
 
-## 🗺️ Roadmap
+## Roadmap
 
 - [x] Sweet Bonanza Slots with tumble mechanic
 - [x] Plinko with 3 risk levels
-- [x] Classic 3x3 Slots
 - [x] Nostr authentication (NIP-07, NIP-98)
 - [x] Nostr instant withdrawals (NIP-04)
 - [x] Dual wallet system (Demo/Real)
@@ -468,25 +392,7 @@ Contributions are welcome! Please follow these guidelines:
 - [ ] Nutzap withdrawals
 - [ ] More Sweet Bonanza features
 
-## ⚠️ Legal Disclaimer
-
-**IMPORTANT**: Online gambling may be illegal in your jurisdiction. This software is provided for educational and entertainment purposes only.
-
-**Operator Responsibilities**:
-- Ensure compliance with all applicable laws and regulations
-- Verify users are of legal gambling age
-- Implement responsible gambling measures
-- Obtain necessary licenses and permits
-
-**User Responsibilities**:
-- Confirm online gambling is legal in your location
-- Only gamble with funds you can afford to lose
-- Never chase losses
-- Seek help if gambling becomes problematic
-
-**No Warranty**: This software is provided "AS IS" without warranty of any kind.
-
-## 📖 Documentation
+## Documentation
 
 For detailed guides and documentation, see the **[docs/](./docs/)** folder:
 - [Quick Start Guide](./docs/QUICKSTART.md)
@@ -499,29 +405,27 @@ For detailed guides and documentation, see the **[docs/](./docs/)** folder:
 - [Security Analysis](./docs/SECURITY_ANALYSIS.md)
 - [RTP Simulation Scripts](./scripts/README-SIMULATION.md)
 
-## 🆘 Support
+## Support
 
 For issues or questions:
-- 🐛 [Open an issue on GitHub](https://github.com/babdbtc/cashucasino/issues)
-- 📖 Browse the [documentation folder](./docs/) for detailed guides
-- 💜 Contact via Nostr: [npub...]
+- [Open an issue on GitHub](https://github.com/babdbtc/cashucasino/issues)
+- Browse the [documentation folder](./docs/) for detailed guides
+- Contact via Nostr: [npub...]
 
-## 📄 License
+## License
 
 MIT License - see [LICENSE](./LICENSE) file for details
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [Cashu Protocol](https://cashu.space/) - Privacy-preserving ecash
 - [Minibits](https://minibits.cash/) - Mint infrastructure
 - [Nostr](https://nostr.com/) - Decentralized protocol
-- [Alby](https://getalby.com/) - Nostr browser extension
-- The Bitcoin, Lightning, and Nostr communities
 
 ---
 
-**🎲 Play Responsibly. Never gamble more than you can afford to lose. 🎲**
+**Play Responsibly. Never gamble more than you can afford to lose.**
 
 ---
 
-*Built with ⚡ by [babd](https://github.com/babdbtc) | Powered by Cashu & Nostr*
+*Built by [babd](https://github.com/babdbtc) | Powered by Cashu & Nostr*
