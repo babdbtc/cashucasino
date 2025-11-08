@@ -5,7 +5,7 @@ import { getCurrentUser } from "@/lib/auth-middleware";
 import { subtractFromBalance, getUserBalance } from "@/lib/auth";
 import { saveMinesGame, getMinesGame, deleteMinesGame } from "@/lib/mines-db";
 
-const MAX_BET = 1000;
+const MAX_BET = 500;
 const MIN_BET = 1;
 
 export async function POST(request: NextRequest) {

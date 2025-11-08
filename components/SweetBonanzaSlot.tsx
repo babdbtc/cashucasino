@@ -635,8 +635,8 @@ export default function SweetBonanzaSlot() {
       return;
     }
 
-    if (betAmount < 1 || betAmount > 1000) {
-      setError("Bet must be between 1 and 1000 sat");
+    if (betAmount < 1 || betAmount > 500) {
+      setError("Bet must be between 1 and 500 sat");
       return;
     }
 
@@ -916,8 +916,8 @@ export default function SweetBonanzaSlot() {
       return;
     }
 
-    if (betAmount < 1 || betAmount > 1000) {
-      setError("Bet must be between 1 and 1000 sat");
+    if (betAmount < 1 || betAmount > 500) {
+      setError("Bet must be between 1 and 500 sat");
       return;
     }
 
@@ -1128,7 +1128,7 @@ export default function SweetBonanzaSlot() {
     }
   };
 
-  const betOptions = [5, 10, 20, 50, 100, 200, 500, 1000];
+  const betOptions = [5, 10, 20, 50, 100, 200, 500];
 
   return (
     <div className="w-full max-w-7xl mx-auto">

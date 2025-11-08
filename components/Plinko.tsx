@@ -55,7 +55,9 @@ const Plinko: React.FC<PlinkoProps> = ({ children }) => {
   const [risk, setRisk] = useState<RiskLevel>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('plinko_risk');
-      return (saved as RiskLevel) || "medium";
+      // Prevent "high" risk from being loaded
+      const savedRisk = saved as RiskLevel;
+      return (savedRisk === "high" ? "medium" : savedRisk) || "medium";
     }
     return "medium";
   });
