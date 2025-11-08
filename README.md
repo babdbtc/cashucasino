@@ -52,16 +52,16 @@ A privacy-focused online casino powered by Cashu ecash. Play provably fair casin
   - **Autoplay**: Up to 500 automatic spins with customizable settings
 
 **Paytable** (8+ symbols):
-- Red Heart: 8-9 = 12x | 10-11 = 30x | 12+ = 60x
-- Purple Candy: 8-9 = 10x | 10-11 = 25x | 12+ = 50x
-- Green Candy: 8-9 = 8x | 10-11 = 20x | 12+ = 40x
-- Blue Candy: 8-9 = 6x | 10-11 = 15x | 12+ = 30x
-- Apple: 8-9 = 4x | 10-11 = 10x | 12+ = 25x
-- Grapes: 8-9 = 3x | 10-11 = 8x | 12+ = 20x
-- Watermelon: 8-9 = 2x | 10-11 = 6x | 12+ = 15x
-- Blueberry: 8-9 = 1.5x | 10-11 = 4x | 12+ = 10x
-- Banana: 8-9 = 1x | 10-11 = 3x | 12+ = 8x
-- Scatter: 4+ triggers 10 free spins
+- 🍬 Red Heart: 8-9 = 12x | 10-11 = 30x | 12+ = 60x
+- 💜 Purple Candy: 8-9 = 10x | 10-11 = 25x | 12+ = 50x
+- 💚 Green Candy: 8-9 = 8x | 10-11 = 20x | 12+ = 40x
+- 💙 Blue Candy: 8-9 = 6x | 10-11 = 15x | 12+ = 30x
+- 🍎 Apple: 8-9 = 4x | 10-11 = 10x | 12+ = 25x
+- 🍇 Grapes: 8-9 = 3x | 10-11 = 8x | 12+ = 20x
+- 🍉 Watermelon: 8-9 = 2x | 10-11 = 6x | 12+ = 15x
+- 🫐 Blueberry: 8-9 = 1.5x | 10-11 = 4x | 12+ = 10x
+- 🍌 Banana: 8-9 = 1x | 10-11 = 3x | 12+ = 8x
+- 🍭 Scatter: 4+ triggers 10 free spins
 
 ### Plinko
 - **Type**: Probability-based ball drop game
@@ -421,11 +421,3 @@ MIT License - see [LICENSE](./LICENSE) file for details
 - [Cashu Protocol](https://cashu.space/) - Privacy-preserving ecash
 - [Minibits](https://minibits.cash/) - Mint infrastructure
 - [Nostr](https://nostr.com/) - Decentralized protocol
-
----
-
-**Play Responsibly. Never gamble more than you can afford to lose.**
-
----
-
-*Built by [babd](https://github.com/babdbtc) | Powered by Cashu & Nostr*
