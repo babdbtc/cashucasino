@@ -4,7 +4,7 @@ import { isRateLimited } from "@/lib/rate-limiter";
 import { getCurrentUser } from "@/lib/auth-middleware";
 import { subtractFromBalance, addToBalance, getUserBalance } from "@/lib/auth";
 
-const MAX_BET = 1000;
+const MAX_BET = 500;
 const MIN_BET = 1;
 
 export async function POST(request: NextRequest) {
@@ -44,8 +44,8 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    if (!["low", "medium", "high"].includes(risk)) {
-      return NextResponse.json({ error: "Invalid risk level" }, { status: 400 });
+    if (!["low", "medium"].includes(risk)) {
+      return NextResponse.json({ error: "Invalid risk level. Only 'low' and 'medium' are allowed." }, { status: 400 });
     }
 
     // Get user's wallet mode

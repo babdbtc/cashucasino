@@ -4,7 +4,7 @@ import { isRateLimited } from "@/lib/rate-limiter";
 import { getCurrentUser } from "@/lib/auth-middleware";
 import { subtractFromBalance, addToBalance, getUserBalance, updateGameState } from "@/lib/auth";
 
-const MAX_BET = parseInt(process.env.MAX_BET_SATS || "1000");
+const MAX_BET = parseInt(process.env.MAX_BET_SATS || "500");
 const MIN_BET = parseInt(process.env.MIN_BET_SATS || "1");
 
 /**

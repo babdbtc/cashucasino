@@ -547,7 +547,7 @@ export default function MinesGame() {
               <input
                 type="number"
                 min="1"
-                max="1000"
+                max="500"
                 value={betAmount}
                 onChange={(e) => setBetAmount(parseInt(e.target.value) || 1)}
                 className="w-full px-4 py-2 bg-gray-700 border-2 border-gray-600 rounded-lg text-white font-semibold"
