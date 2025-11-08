@@ -19,12 +19,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Rate limiting: 60 requests per minute per IP
+    // Rate limiting: 200 requests per minute per IP (~3 per second average)
     const ip = request.headers.get("x-forwarded-for") ||
                 request.headers.get("x-real-ip") ||
                 "unknown";
 
-    if (isRateLimited(ip, 60, 60 * 1000)) {
+    if (isRateLimited(ip, 200, 60 * 1000)) {
       return NextResponse.json(
         { error: "Too many requests. Please wait a moment." },
         { status: 429 }
