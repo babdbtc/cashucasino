@@ -719,7 +719,7 @@ export default function BlackjackSolo() {
           <div className="w-full md:w-64 lg:w-72 md:flex-shrink-0 space-y-4">
             {/* Balance Display */}
             <div className="bg-gradient-to-br from-gray-900 to-black px-4 py-3 rounded-xl border-2 border-yellow-600 shadow-2xl text-center">
-              <div className="text-yellow-400 font-bold text-xs mb-1">BALANCE {user?.walletMode === "demo" && <span className="text-purple-300">(Demo)</span>}</div>
+              <div className="text-yellow-400 font-bold text-xs mb-1">BALANCE {user?.walletMode === "demo" && <span className="text-purple-300">(DEMO)</span>}</div>
               <div className="text-white font-black text-2xl">{user?.balance || 0}</div>
               <div className="text-yellow-400 font-bold text-xs">sat</div>
             </div>
