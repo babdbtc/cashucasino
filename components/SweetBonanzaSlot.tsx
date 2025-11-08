@@ -1128,7 +1128,7 @@ export default function SweetBonanzaSlot() {
     }
   };
 
-  const betOptions = [1, 5, 10, 20, 50, 100, 200, 500, 1000];
+  const betOptions = [5, 10, 20, 50, 100, 200, 500, 1000];
 
   return (
     <div className="w-full max-w-7xl mx-auto">
