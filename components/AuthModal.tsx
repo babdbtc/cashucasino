@@ -12,50 +12,9 @@ export default function AuthModal() {
   const [showAccountId, setShowAccountId] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // If user is logged in, show account info
+  // If user is logged in, don't show anything (logged in section moved to SideNav)
   if (user) {
-    const walletMode = user.walletMode || "demo";
-    return (
-      <div className="fixed top-4 right-4 z-50">
-        <div className="relative glass rounded-2xl p-4 border border-neon-purple/30 shadow-xl backdrop-blur-lg w-64">
-          {/* Gradient accent */}
-          <div className="absolute inset-0 bg-gradient-to-br from-neon-pink/5 via-neon-purple/5 to-neon-blue/5 rounded-2xl pointer-events-none" />
-
-          <div className="relative space-y-3">
-            {/* Header */}
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-neon-green animate-pulse" />
-              <span className="text-sm font-semibold text-white">
-                Logged in
-              </span>
-            </div>
-
-            {/* Account ID Toggle */}
-            <button
-              onClick={() => setShowAccountId(!showAccountId)}
-              className="w-full text-xs text-neon-blue hover:text-neon-purple transition-colors duration-300 text-left px-2 py-1 rounded hover:bg-white/5"
-            >
-              {showAccountId ? "▼ Hide" : "▶ Show"} Account ID
-            </button>
-
-            {/* Account ID Display */}
-            {showAccountId && (
-              <div className="text-xs text-gray-400 font-mono bg-black/30 p-3 rounded-lg border border-white/10 break-all">
-                {user.accountId}
-              </div>
-            )}
-
-            {/* Logout Button */}
-            <button
-              onClick={logout}
-              className="w-full px-4 py-2 rounded-lg font-semibold text-sm bg-gradient-to-r from-red-500/20 to-red-600/20 border border-red-500/30 hover:border-red-400 text-red-300 hover:text-red-200 transition-all duration-300 transform hover:scale-105 active:scale-95"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   // Otherwise show login/register modal

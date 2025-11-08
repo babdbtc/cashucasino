@@ -333,7 +333,6 @@ export default function WalletPanel() {
             <span className="text-sm uppercase tracking-wider text-gray-400 dark:text-gray-500 font-semibold">
               Balance {walletMode === "demo" && <span className="text-neon-blue ml-1">(Demo)</span>}
             </span>
-            <span className="text-2xl">💰</span>
           </div>
           <div className="text-5xl font-black bg-gradient-to-r from-casino-gold to-neon-yellow bg-clip-text text-transparent mb-1">
             {balance.toLocaleString()}
@@ -472,7 +471,7 @@ export default function WalletPanel() {
               : "bg-neon-green/10 border-neon-green/40"
           }`}>
             <div className="flex items-start gap-2">
-              <span className="text-xl">{walletMode === "demo" ? "⚠️" : "💰"}</span>
+              {walletMode === "demo" && <span className="text-xl">⚠️</span>}
               <div>
                 <p className="text-xs text-gray-300">
                   {walletMode === "demo" ? (

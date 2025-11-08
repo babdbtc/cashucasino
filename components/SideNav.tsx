@@ -9,12 +9,13 @@ import WalletPanel from "./WalletPanel";
 import ThemeToggle from "./ThemeToggle";
 
 const SideNav = () => {
-  const { user, switchWalletMode } = useAuth();
+  const { user, switchWalletMode, logout } = useAuth();
   const balance = user?.balance || 0;
   const walletMode = user?.walletMode || "real";
   const [isWalletPanelOpen, setIsWalletPanelOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [switchingMode, setSwitchingMode] = useState(false);
+  const [showAccountId, setShowAccountId] = useState(false);
   const pathname = usePathname();
 
   const navItems = [
@@ -57,7 +58,6 @@ const SideNav = () => {
             onClick={() => setIsWalletPanelOpen(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-neon-blue/10 border border-neon-blue/30 hover:border-neon-blue transition-all"
           >
-            <span className="text-xl">💰</span>
             <div className="flex flex-col items-start">
               <span className="text-xs text-gray-400 dark:text-gray-500">Balance {walletMode === "demo" && <span className="text-neon-blue">(Demo)</span>}</span>
               <span className="text-sm font-bold bg-gradient-to-r from-casino-gold to-neon-yellow bg-clip-text text-transparent">
@@ -96,6 +96,9 @@ const SideNav = () => {
             <h1 className="text-2xl font-bold bg-gradient-to-r from-neon-pink via-neon-purple to-neon-blue bg-clip-text text-transparent animate-gradient bg-[length:200%_auto]">
               cashucasino.cc
             </h1>
+            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+              #NutNovember
+            </p>
           </div>
 
           {/* Theme Toggle */}
@@ -103,8 +106,38 @@ const SideNav = () => {
             <ThemeToggle />
           </div>
 
+          {/* Navigation Links */}
+          <nav className="space-y-2 mb-6">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`block py-3 px-4 rounded-xl transition-all duration-300 transform hover:scale-105 hover:translate-x-2 group relative overflow-hidden
+                    ${isActive
+                      ? 'bg-gradient-to-r from-neon-pink/20 to-neon-purple/20 shadow-lg shadow-neon-purple/50 border-l-4 border-neon-pink'
+                      : 'hover:bg-white/5 dark:hover:bg-white/10'}`}
+                >
+                  {/* Hover glow effect */}
+                  <div className={`absolute inset-0 bg-gradient-to-r from-neon-pink/0 via-neon-purple/20 to-neon-blue/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+
+                  <span className="relative flex items-center gap-3">
+                    <span className="text-2xl transform group-hover:scale-125 group-hover:rotate-12 transition-transform duration-300">
+                      {item.icon}
+                    </span>
+                    <span className={`font-semibold ${isActive ? 'text-neon-pink' : ''}`}>
+                      {item.label}
+                    </span>
+                  </span>
+                </Link>
+              );
+            })}
+          </nav>
+
           {/* Balance Card with Neon Glow - hidden on mobile */}
-          <div className="mb-8 relative group hidden md:block">
+          <div className="flex-grow relative group hidden md:block">
             {/* Balance content */}
             <div className="relative glass rounded-2xl p-5 shadow-2xl">
               <div className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2 font-semibold">
@@ -120,7 +153,7 @@ const SideNav = () => {
                          bg-neon-blue/20 border-2 border-neon-blue/50 hover:border-neon-blue
                          text-white mb-3"
               >
-                💰 Wallet
+                Wallet
               </button>
 
               {/* Mode Toggle Switch */}
@@ -158,35 +191,48 @@ const SideNav = () => {
             </div>
           </div>
 
-          {/* Navigation Links */}
-          <nav className="flex-grow space-y-2">
-            {navItems.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`block py-3 px-4 rounded-xl transition-all duration-300 transform hover:scale-105 hover:translate-x-2 group relative overflow-hidden
-                    ${isActive
-                      ? 'bg-gradient-to-r from-neon-pink/20 to-neon-purple/20 shadow-lg shadow-neon-purple/50 border-l-4 border-neon-pink'
-                      : 'hover:bg-white/5 dark:hover:bg-white/10'}`}
-                >
-                  {/* Hover glow effect */}
-                  <div className={`absolute inset-0 bg-gradient-to-r from-neon-pink/0 via-neon-purple/20 to-neon-blue/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+          {/* Logged In Section - hidden on mobile */}
+          {user && (
+            <div className="mt-6 hidden md:block">
+              <div className="relative glass rounded-2xl p-4 border border-neon-purple/30 shadow-xl">
+                {/* Gradient accent */}
+                <div className="absolute inset-0 bg-gradient-to-br from-neon-pink/5 via-neon-purple/5 to-neon-blue/5 rounded-2xl pointer-events-none" />
 
-                  <span className="relative flex items-center gap-3">
-                    <span className="text-2xl transform group-hover:scale-125 group-hover:rotate-12 transition-transform duration-300">
-                      {item.icon}
+                <div className="relative space-y-3">
+                  {/* Header */}
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-neon-green animate-pulse" />
+                    <span className="text-sm font-semibold text-white">
+                      Logged in
                     </span>
-                    <span className={`font-semibold ${isActive ? 'text-neon-pink' : ''}`}>
-                      {item.label}
-                    </span>
-                  </span>
-                </Link>
-              );
-            })}
-          </nav>
+                  </div>
+
+                  {/* Account ID Toggle */}
+                  <button
+                    onClick={() => setShowAccountId(!showAccountId)}
+                    className="w-full text-xs text-neon-blue hover:text-neon-purple transition-colors duration-300 text-left px-2 py-1 rounded hover:bg-white/5"
+                  >
+                    {showAccountId ? "▼ Hide" : "▶ Show"} Account ID
+                  </button>
+
+                  {/* Account ID Display */}
+                  {showAccountId && (
+                    <div className="text-xs text-gray-400 font-mono bg-black/30 p-3 rounded-lg border border-white/10 break-all">
+                      {user.accountId}
+                    </div>
+                  )}
+
+                  {/* Logout Button */}
+                  <button
+                    onClick={logout}
+                    className="w-full px-4 py-2 rounded-lg font-semibold text-sm bg-gradient-to-r from-red-500/20 to-red-600/20 border border-red-500/30 hover:border-red-400 text-red-300 hover:text-red-200 transition-all duration-300 transform hover:scale-105 active:scale-95"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Footer with social links */}
           <div className="mt-8 pt-6 border-t border-white/10 dark:border-white/5 text-center">
