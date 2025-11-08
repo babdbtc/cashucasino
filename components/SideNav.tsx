@@ -21,7 +21,7 @@ const SideNav = () => {
   const navItems = [
     { href: "/", label: "Home", icon: "🏠" },
     { href: "/slots", label: "Slots", icon: "🎰" },
-    { href: "/plinko", label: "Plinko", icon: "🎯" },
+    { href: "/arcade", label: "Arcade Games", icon: "🎮" },
     { href: "/table-games", label: "Table Games", icon: "🎲" },
   ];
 

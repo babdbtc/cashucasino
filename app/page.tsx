@@ -114,6 +114,13 @@ export default function Home() {
               link="/plinko"
             />
             <GameCard
+              title="Mines"
+              description="Find the gems and avoid the mines! Cash out anytime with increasing multipliers!"
+              imageSrc="/images/mines-preview.png"
+              emojis={['💎', '💣', '✨', '💰', '⚡']}
+              link="/mines"
+            />
+            <GameCard
               title="Table Games"
               description="Classic casino action with Blackjack, Roulette, and more!"
               imageSrc="/images/table-games-preview.png"
