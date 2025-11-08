@@ -410,7 +410,7 @@ For detailed guides and documentation, see the **[docs/](./docs/)** folder:
 For issues or questions:
 - [Open an issue on GitHub](https://github.com/babdbtc/cashucasino/issues)
 - Browse the [documentation folder](./docs/) for detailed guides
-- Contact via Nostr: [npub...]
+- Contact via Nostr: [npub1d3h6cxpz9y9f20c5rg08hgadjtns4stmyqw75q8spssdp46r635q33wvj0](https://njump.me/npub1d3h6cxpz9y9f20c5rg08hgadjtns4stmyqw75q8spssdp46r635q33wvj0)
 
 ## License
 
