@@ -40,7 +40,7 @@ A privacy-focused online casino powered by Cashu ecash. Play provably fair casin
 ### Sweet Bonanza
 - **Type**: 6x5 cluster pays slot with tumble mechanic
 - **RTP**: ~95.5% (4.5% house edge)
-- **Min Bet**: 1 sat
+- **Min Bet**: 5 sats
 - **Max Bet**: 1000 sats
 - **Features**:
   - **Cluster Pays**: Win with 8+ matching symbols anywhere on grid
