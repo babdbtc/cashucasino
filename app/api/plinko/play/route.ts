@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { playPlinko, RiskLevel } from "@/lib/plinko";
-import { isRateLimited } from "@/lib/rate-limiter";
+import { isRateLimitedByMode } from "@/lib/rate-limiter";
 import { getCurrentUser } from "@/lib/auth-middleware";
 import { subtractFromBalance, addToBalance, getUserBalance } from "@/lib/auth";
 
@@ -18,14 +18,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Rate limiting: 500 requests per minute per IP (~8 per second average)
+    // Get user's wallet mode
+    const walletMode = user.wallet_mode;
+
+    // Rate limiting with different limits for demo vs real play
+    // Demo: 100 requests/minute (restrictive to encourage real play)
+    // Real: 500 requests/minute (generous for paying users)
     const ip = request.headers.get("x-forwarded-for") ||
                 request.headers.get("x-real-ip") ||
                 "unknown";
 
-    if (isRateLimited(ip, 500, 60 * 1000)) {
+    if (isRateLimitedByMode(ip, walletMode, user.account_id, {
+      demoMaxRequests: 30,     // Very restrictive for demo
+      demoWindowMs: 60 * 1000,
+      realMaxRequests: 10000,  // Anti-DDoS only, normal players never hit this
+      realWindowMs: 60 * 1000,
+    })) {
       return NextResponse.json(
-        { error: "Too many requests. Please wait a moment before playing again." },
+        { error: `Too many requests. Please wait a moment before playing again. (${walletMode} mode)` },
         { status: 429 }
       );
     }
@@ -47,9 +57,6 @@ export async function POST(request: NextRequest) {
     if (!["low", "medium"].includes(risk)) {
       return NextResponse.json({ error: "Invalid risk level. Only 'low' and 'medium' are allowed." }, { status: 400 });
     }
-
-    // Get user's wallet mode
-    const walletMode = user.wallet_mode;
 
     // Check user balance
     const userBalance = getUserBalance(user.id, walletMode);

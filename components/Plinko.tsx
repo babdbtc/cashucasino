@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, ReactNode } from "react";
 import Ball from "./Ball";
 import { useAuth } from "@/lib/auth-context";
 import { RiskLevel } from "@/lib/plinko";
+import RateLimitModal from "./RateLimitModal";
 
 // Multipliers by risk level - 17 slots
 const MULTIPLIERS_BY_RISK = {
@@ -42,6 +43,7 @@ interface PlinkoProps {
 const Plinko: React.FC<PlinkoProps> = ({ children }) => {
   const { user, updateBalance } = useAuth();
   const balance = user?.balance || 0;
+  const walletMode = user?.walletMode || "real";
 
   // Load saved settings from localStorage
   const [betAmount, setBetAmount] = useState(() => {
@@ -65,6 +67,7 @@ const Plinko: React.FC<PlinkoProps> = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [activeBalls, setActiveBalls] = useState<ActiveBall[]>([]);
   const [highlightedSlot, setHighlightedSlot] = useState<number | null>(null);
+  const [showRateLimitModal, setShowRateLimitModal] = useState(false);
 
   // Save settings to localStorage when they change
   useEffect(() => {
@@ -102,11 +105,23 @@ const Plinko: React.FC<PlinkoProps> = ({ children }) => {
         const uniqueId = Date.now() + Math.random() * 1000000;
         setActiveBalls(prev => [...prev, { ...data, id: uniqueId, newBalance: data.newBalance }]);
       } else {
-        alert(data.error);
+        // Check if it's a demo rate limit error
+        if (data.error && data.error.includes("Too many requests") && data.error.includes("demo mode")) {
+          setShowRateLimitModal(true);
+        } else {
+          alert(data.error);
+        }
       }
     } catch (error) {
       console.error("Plinko play error:", error);
-      alert("An error occurred while playing Plinko.");
+      const errorMessage = error instanceof Error ? error.message : "An error occurred while playing Plinko.";
+
+      // Check if it's a demo rate limit error
+      if (errorMessage.includes("Too many requests") && errorMessage.includes("demo mode")) {
+        setShowRateLimitModal(true);
+      } else {
+        alert(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -283,6 +298,12 @@ const Plinko: React.FC<PlinkoProps> = ({ children }) => {
         renderPegs,
         renderMultipliers,
       })}
+
+      {/* Rate Limit Modal */}
+      <RateLimitModal
+        isOpen={showRateLimitModal}
+        onClose={() => setShowRateLimitModal(false)}
+      />
     </>
   );
 };

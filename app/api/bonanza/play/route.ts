@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { playSpin } from "@/lib/sweet-bonanza";
-import { isRateLimited } from "@/lib/rate-limiter";
+import { isRateLimitedByMode } from "@/lib/rate-limiter";
 import { getCurrentUser } from "@/lib/auth-middleware";
 import { subtractFromBalance, addToBalance, getUserBalance, getGameState, updateGameState } from "@/lib/auth";
 
@@ -25,15 +25,21 @@ export async function POST(req: NextRequest) {
 
     const walletMode = user.wallet_mode;
 
-    // Rate limiting based on IP - more generous since no mint calls
+    // Rate limiting with different limits for demo vs real play
+    // Demo: Very restrictive to encourage real play
+    // Real: Generous to accommodate turbo mode and autoplay
     const ip = req.headers.get("x-forwarded-for") ||
                 req.headers.get("x-real-ip") ||
                 "unknown";
 
-    // Allow 120 requests per minute per IP (accommodates turbo mode and autoplay)
-    if (isRateLimited(ip, 120, 60 * 1000)) {
+    if (isRateLimitedByMode(ip, walletMode, user.account_id, {
+      demoMaxRequests: 20,     // ~1 every 3 seconds (very restrictive)
+      demoWindowMs: 60 * 1000,
+      realMaxRequests: 10000,  // Anti-DDoS only, turbo/autoplay never hits this
+      realWindowMs: 60 * 1000,
+    })) {
       return NextResponse.json(
-        { error: "Too many requests. Please wait a moment before playing again." },
+        { error: `Too many requests. Please wait a moment before playing again. (${walletMode} mode)` },
         { status: 429 }
       );
     }
