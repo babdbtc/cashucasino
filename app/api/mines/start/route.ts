@@ -72,9 +72,6 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Get user's wallet mode
-    const walletMode = user.wallet_mode;
-
     // Check if user already has an active game
     const existingGame = getMinesGame(user.id, walletMode);
     if (existingGame) {

@@ -56,9 +56,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user's wallet mode
-    const walletMode = user.wallet_mode;
-
     // Check user balance
     const userBalance = getUserBalance(user.id, walletMode);
     if (userBalance < betAmount) {
