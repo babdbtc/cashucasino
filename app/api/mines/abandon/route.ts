@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isRateLimited } from "@/lib/rate-limiter";
+import { isRateLimitedByMode } from "@/lib/rate-limiter";
 import { getCurrentUser } from "@/lib/auth-middleware";
 import { getMinesGame, deleteMinesGame } from "@/lib/mines-db";
 
@@ -14,20 +14,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Rate limiting: 100 requests per minute per IP
+    // Get user's wallet mode
+    const walletMode = user.wallet_mode;
+
+    // Rate limiting with different limits for demo vs real play
     const ip = request.headers.get("x-forwarded-for") ||
                 request.headers.get("x-real-ip") ||
                 "unknown";
 
-    if (isRateLimited(ip, 100, 60 * 1000)) {
+    if (isRateLimitedByMode(ip, walletMode, user.account_id, {
+      demoMaxRequests: 20,     // Very restrictive for demo
+      demoWindowMs: 60 * 1000,
+      realMaxRequests: 10000,  // Anti-DDoS only
+      realWindowMs: 60 * 1000,
+    })) {
       return NextResponse.json(
-        { error: "Too many requests. Please wait a moment." },
+        { error: `Too many requests. Please wait a moment. (${walletMode} mode)` },
         { status: 429 }
       );
     }
-
-    // Get user's wallet mode
-    const walletMode = user.wallet_mode;
 
     // Check if there's an active game
     const gameData = getMinesGame(user.id, walletMode);

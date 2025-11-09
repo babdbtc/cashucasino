@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revealTile } from "@/lib/mines";
-import { isRateLimited } from "@/lib/rate-limiter";
+import { isRateLimitedByMode } from "@/lib/rate-limiter";
 import { getCurrentUser } from "@/lib/auth-middleware";
 import { getMinesGame, updateMinesGame, deleteMinesGame } from "@/lib/mines-db";
 
@@ -15,14 +15,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Rate limiting: 600 requests per minute per IP (~10 per second average)
+    // Get user's wallet mode
+    const walletMode = user.wallet_mode;
+
+    // Rate limiting with different limits for demo vs real play
+    // Demo: Restrictive to encourage real play
+    // Real: Original generous limits for paying users
     const ip = request.headers.get("x-forwarded-for") ||
                 request.headers.get("x-real-ip") ||
                 "unknown";
 
-    if (isRateLimited(ip, 600, 60 * 1000)) {
+    if (isRateLimitedByMode(ip, walletMode, user.account_id, {
+      demoMaxRequests: 30,     // Very restrictive for demo
+      demoWindowMs: 60 * 1000,
+      realMaxRequests: 10000,  // Anti-DDoS only, fast clicking never hits this
+      realWindowMs: 60 * 1000,
+    })) {
       return NextResponse.json(
-        { error: "Too many requests. Please slow down." },
+        { error: `Too many requests. Please slow down. (${walletMode} mode)` },
         { status: 429 }
       );
     }
@@ -36,9 +46,6 @@ export async function POST(request: NextRequest) {
         error: "Invalid tile position (must be 0-24)"
       }, { status: 400 });
     }
-
-    // Get user's wallet mode
-    const walletMode = user.wallet_mode;
 
     // Get active game
     const gameData = getMinesGame(user.id, walletMode);

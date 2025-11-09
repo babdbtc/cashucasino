@@ -5,6 +5,7 @@ import { flushSync } from "react-dom";
 import { useAuth } from "@/lib/auth-context";
 import gsap from "gsap";
 import { useSound } from "@/hooks/useSound";
+import RateLimitModal from "./RateLimitModal";
 
 type Symbol =
   | "🍬" // Red Heart Candy (highest)
@@ -101,6 +102,7 @@ export default function SweetBonanzaSlot() {
   const [extendedFreeSpins, setExtendedFreeSpins] = useState(0); // Track newly awarded free spins during free spins
   const [awardedFreeSpins, setAwardedFreeSpins] = useState(0); // Store originally awarded free spins for display
   const [buyingFreeSpins, setBuyingFreeSpins] = useState(false); // Track if user is buying free spins
+  const [showRateLimitModal, setShowRateLimitModal] = useState(false); // Show demo rate limit modal
 
   const gridRef = useRef<HTMLDivElement>(null);
   const winDisplayRef = useRef<HTMLDivElement>(null);
@@ -899,6 +901,11 @@ export default function SweetBonanzaSlot() {
       setError(errorMessage);
       setSpinning(false);
 
+      // Check if it's a demo rate limit error
+      if (errorMessage.includes("Too many requests") && errorMessage.includes("demo mode")) {
+        setShowRateLimitModal(true);
+      }
+
       // Balance remains unchanged on error (bet wasn't processed)
 
       if (isAutoplay) {
@@ -1109,6 +1116,11 @@ export default function SweetBonanzaSlot() {
       const errorMessage = err instanceof Error ? err.message : "An error occurred";
       setError(errorMessage);
       setSpinning(false);
+
+      // Check if it's a demo rate limit error
+      if (errorMessage.includes("Too many requests") && errorMessage.includes("demo mode")) {
+        setShowRateLimitModal(true);
+      }
     }
   };
 
@@ -1891,6 +1903,12 @@ export default function SweetBonanzaSlot() {
           ⚡ RTP: ~95.5% • Scatter Pays (8+ symbols ANYWHERE) • Tumble Feature • Bomb Multipliers in Free Spins ⚡
         </p>
       </div>
+
+      {/* Rate Limit Modal */}
+      <RateLimitModal
+        isOpen={showRateLimitModal}
+        onClose={() => setShowRateLimitModal(false)}
+      />
     </div>
   );
 }
