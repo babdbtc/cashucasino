@@ -156,9 +156,23 @@ function initializeDatabase(database: Database.Database) {
       user_id INTEGER NOT NULL,
       created_at INTEGER NOT NULL,
       expires_at INTEGER NOT NULL,
+      wallet_mode TEXT DEFAULT 'demo',
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )
   `);
+
+  // Migration: Add wallet_mode column to sessions if it doesn't exist
+  try {
+    const sessionTableInfo = database.prepare("PRAGMA table_info(sessions)").all() as Array<{ name: string }>;
+    const hasSessionWalletMode = sessionTableInfo.some(col => col.name === "wallet_mode");
+
+    if (!hasSessionWalletMode) {
+      console.log("[Database Migration] Adding wallet_mode column to sessions table");
+      database.exec(`ALTER TABLE sessions ADD COLUMN wallet_mode TEXT DEFAULT 'demo'`);
+    }
+  } catch (error) {
+    // Table might not exist yet, which is fine
+  }
 
   // Transactions table for audit log
   database.exec(`

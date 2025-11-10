@@ -18,6 +18,7 @@ export interface Session {
   user_id: number;
   created_at: number;
   expires_at: number;
+  wallet_mode: WalletMode;
 }
 
 /**
@@ -107,10 +108,24 @@ export function getUserByAccountId(accountId: string): User | null {
 
 /**
  * Get user by internal ID
- * Gets user from demo database first to determine wallet_mode, then returns user from active database
+ * If mode is provided, queries that database directly (more efficient when mode is known from session)
+ * Otherwise, gets user from demo database first to determine wallet_mode, then returns user from active database
  * Uses account_id to find user across databases since IDs may differ
  */
-export function getUserById(id: number): User | null {
+export function getUserById(id: number, mode?: WalletMode): User | null {
+  // If mode is provided, query that database directly
+  if (mode) {
+    const activeDb = getDatabase(mode);
+    const user = activeDb.prepare(`
+      SELECT id, account_id, nostr_pubkey, balance, wallet_mode, created_at, last_login
+      FROM users
+      WHERE id = ?
+    `).get(id) as User | undefined;
+
+    return user || null;
+  }
+
+  // Otherwise, use the existing two-step lookup process
   // First get from demo database to determine wallet_mode and account_id
   const demoDb = getDatabase("demo");
   const demoUser = demoDb.prepare(`
@@ -207,9 +222,9 @@ export function createSession(userId: number, mode: WalletMode = "demo"): string
 
   const activeDb = getDatabase(mode);
   activeDb.prepare(`
-    INSERT INTO sessions (id, user_id, created_at, expires_at)
-    VALUES (?, ?, ?, ?)
-  `).run(sessionId, userId, now, expiresAt);
+    INSERT INTO sessions (id, user_id, created_at, expires_at, wallet_mode)
+    VALUES (?, ?, ?, ?, ?)
+  `).run(sessionId, userId, now, expiresAt, mode);
 
   return sessionId;
 }
@@ -221,7 +236,7 @@ export function createSession(userId: number, mode: WalletMode = "demo"): string
 export function getSession(sessionId: string): Session | null {
   // Try demo database first
   let session = getDatabase("demo").prepare(`
-    SELECT id, user_id, created_at, expires_at
+    SELECT id, user_id, created_at, expires_at, wallet_mode
     FROM sessions
     WHERE id = ?
   `).get(sessionId) as Session | undefined;
@@ -229,7 +244,7 @@ export function getSession(sessionId: string): Session | null {
   // If not in demo, try real
   if (!session) {
     session = getDatabase("real").prepare(`
-      SELECT id, user_id, created_at, expires_at
+      SELECT id, user_id, created_at, expires_at, wallet_mode
       FROM sessions
       WHERE id = ?
     `).get(sessionId) as Session | undefined;

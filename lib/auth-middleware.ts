@@ -20,7 +20,8 @@ export function getCurrentUser(req: NextRequest): User | null {
     return null;
   }
 
-  const user = getUserById(session.user_id);
+  // Pass wallet_mode from session to getUserById for direct database lookup
+  const user = getUserById(session.user_id, session.wallet_mode);
 
   return user;
 }
