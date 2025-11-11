@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
+import RateLimitModal from "./RateLimitModal";
 
 const GRID_SIZE = 5;
 const TOTAL_TILES = 25;
@@ -53,6 +54,7 @@ export default function MinesGame() {
   const [minesCount, setMinesCount] = useState(5);
   const [quickPickCount, setQuickPickCount] = useState(1);
   const [multiplierPulse, setMultiplierPulse] = useState(false);
+  const [showRateLimitModal, setShowRateLimitModal] = useState(false);
 
   // Save bet amount to localStorage
   useEffect(() => {
@@ -117,17 +119,18 @@ export default function MinesGame() {
       } else {
         // Check if error is about existing game
         if (data.error?.includes("already have an active")) {
-          const shouldAbandon = confirm(
-            "You have an unfinished game. Abandoning it will forfeit your bet. Start a new game?"
-          );
-          if (shouldAbandon) {
-            await handleAbandonGame();
-            // Retry starting the game
-            setTimeout(() => handleStartGame(), 100);
-            return;
-          }
+          // Automatically abandon and reload the game
+          await handleAbandonGame();
+          // Retry starting the game
+          setTimeout(() => handleStartGame(), 100);
+          return;
         } else {
-          alert(data.error);
+          // Check if it's a demo rate limit error
+          if (data.error?.includes("Too many requests") && data.error?.includes("demo mode")) {
+            setShowRateLimitModal(true);
+          } else {
+            alert(data.error);
+          }
         }
       }
     } catch (error) {
@@ -190,7 +193,12 @@ export default function MinesGame() {
           setPotentialWin(data.potentialWin);
         }
       } else {
-        alert(data.error);
+        // Check if it's a demo rate limit error
+        if (data.error?.includes("Too many requests") && data.error?.includes("demo mode")) {
+          setShowRateLimitModal(true);
+        } else {
+          alert(data.error);
+        }
         // Revert optimistic update
         setTiles(prev => {
           const newTiles = [...prev];
@@ -266,7 +274,12 @@ export default function MinesGame() {
         setResultMessage({ type: "win", amount: data.winAmount, multiplier: data.multiplier });
         setShowResultBanner(true);
       } else {
-        alert(data.error);
+        // Check if it's a demo rate limit error
+        if (data.error?.includes("Too many requests") && data.error?.includes("demo mode")) {
+          setShowRateLimitModal(true);
+        } else {
+          alert(data.error);
+        }
       }
     } catch (error) {
       console.error("Mines cashout error:", error);
@@ -366,12 +379,12 @@ export default function MinesGame() {
             <div className="text-xl font-black text-yellow-400">{walletBalance}</div>
           </div>
 
-          <div className="bg-black/40 rounded-lg p-3 border border-blue-400/40 relative overflow-hidden">
-            {multiplierPulse && (
-              <div className="absolute inset-0 bg-blue-400/30 animate-ping rounded-lg" />
+          <div className="bg-black/40 rounded-lg p-3 border border-blue-400/40 relative overflow-visible">
+            {multiplierPulse && gameActive && !gameOver && (
+              <div className="absolute inset-0 bg-blue-400/30 animate-ping rounded-lg pointer-events-none" />
             )}
             <div className="text-xs text-blue-300 uppercase font-semibold mb-1 relative z-10">Multiplier</div>
-            <div className={`text-xl font-black text-blue-400 relative z-10 transition-all duration-300 transform hover:scale-110 ${
+            <div className={`text-xl font-black text-blue-400 relative z-10 transition-all duration-300 transform hover:scale-110 origin-left ${
               multiplierPulse ? 'scale-125 text-neon-blue' : ''
             }`}>
               {currentMultiplier.toFixed(2)}x
@@ -652,6 +665,12 @@ export default function MinesGame() {
           <p>RTP: ~97% • Click tiles to reveal gems • Avoid the mines • Cash out anytime</p>
         </div>
       </div>
+
+      {/* Rate Limit Modal */}
+      <RateLimitModal
+        isOpen={showRateLimitModal}
+        onClose={() => setShowRateLimitModal(false)}
+      />
     </div>
   );
 }
