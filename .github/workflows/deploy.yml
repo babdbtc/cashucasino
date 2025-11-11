@@ -19,6 +19,10 @@ jobs:
           script: |
             cd cashucasino
             git pull origin main
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            nvm use 22.4
             npm install
+            npm rebuild
             npm run build
             pm2 restart cashucasino
