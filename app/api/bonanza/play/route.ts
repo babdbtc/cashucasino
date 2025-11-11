@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
                 "unknown";
 
     if (isRateLimitedByMode(ip, walletMode, user.account_id, {
-      demoMaxRequests: 20,     // ~1 every 3 seconds (very restrictive)
+      demoMaxRequests: 40,     // ~1 every 3 seconds (very restrictive)
       demoWindowMs: 60 * 1000,
       realMaxRequests: 10000,  // Anti-DDoS only, turbo/autoplay never hits this
       realWindowMs: 60 * 1000,

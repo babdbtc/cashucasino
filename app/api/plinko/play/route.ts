@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
                 "unknown";
 
     if (isRateLimitedByMode(ip, walletMode, user.account_id, {
-      demoMaxRequests: 30,     // Very restrictive for demo
+      demoMaxRequests: 60,     // Very restrictive for demo
       demoWindowMs: 60 * 1000,
       realMaxRequests: 10000,  // Anti-DDoS only, normal players never hit this
       realWindowMs: 60 * 1000,
