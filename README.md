@@ -1,6 +1,6 @@
 # Cashu Casino
 
-**Live at: [cashucasino.cc](https://cashucasino.cc)**
+**Demo at: [cashucasino.cc](https://cashucasino.cc)**
 
 A privacy-focused online casino powered by Cashu ecash. Play provably fair casino games with Bitcoin through Cashu tokens - minimal registration, instant deposits/withdrawals, and complete transparency.
 
