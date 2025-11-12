@@ -251,6 +251,22 @@ function initializeDatabase(database: Database.Database) {
     )
   `);
 
+  // Lightning deposit quotes - Tracks pending Lightning deposits
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS lightning_deposits (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      quote_id TEXT UNIQUE NOT NULL,
+      amount INTEGER NOT NULL,
+      invoice TEXT NOT NULL,
+      state TEXT NOT NULL DEFAULT 'UNPAID',
+      expiry INTEGER NOT NULL,
+      wallet_mode TEXT DEFAULT 'demo',
+      created_at INTEGER NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
   // Create indexes for better performance
   database.exec(`
     CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
@@ -262,6 +278,9 @@ function initializeDatabase(database: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_blackjack_seats_table ON blackjack_seats(table_id);
     CREATE INDEX IF NOT EXISTS idx_blackjack_seats_user ON blackjack_seats(user_id);
     CREATE INDEX IF NOT EXISTS idx_blackjack_solo_updated ON blackjack_solo_games(updated_at);
+    CREATE INDEX IF NOT EXISTS idx_lightning_deposits_user_id ON lightning_deposits(user_id);
+    CREATE INDEX IF NOT EXISTS idx_lightning_deposits_quote_id ON lightning_deposits(quote_id);
+    CREATE INDEX IF NOT EXISTS idx_lightning_deposits_state ON lightning_deposits(state);
   `);
 }
 
@@ -300,6 +319,17 @@ setInterval(() => {
   const realGameResult = dbReal.prepare("DELETE FROM blackjack_solo_games WHERE updated_at < ?").run(gameExpiry);
   if (realGameResult.changes > 0) {
     console.log(`[Database Real] Cleaned up ${realGameResult.changes} abandoned blackjack solo games`);
+  }
+
+  // Clean up expired Lightning deposits
+  const demoLightningResult = dbDemo.prepare("DELETE FROM lightning_deposits WHERE expiry < ? AND state != 'PAID'").run(now);
+  if (demoLightningResult.changes > 0) {
+    console.log(`[Database Demo] Cleaned up ${demoLightningResult.changes} expired Lightning deposits`);
+  }
+
+  const realLightningResult = dbReal.prepare("DELETE FROM lightning_deposits WHERE expiry < ? AND state != 'PAID'").run(now);
+  if (realLightningResult.changes > 0) {
+    console.log(`[Database Real] Cleaned up ${realLightningResult.changes} expired Lightning deposits`);
   }
 }, 60 * 60 * 1000); // Every hour
 
