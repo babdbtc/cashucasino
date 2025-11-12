@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth, type WalletMode } from "@/lib/auth-context";
+import { QRCodeSVG } from "qrcode.react";
 
 export default function WalletPanel() {
   const { user, updateBalance, refreshUser, switchWalletMode } = useAuth();
@@ -18,6 +19,16 @@ export default function WalletPanel() {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [switchingMode, setSwitchingMode] = useState(false);
+
+  // Lightning deposit state
+  const [depositMethod, setDepositMethod] = useState<"cashu" | "lightning">("lightning");
+  const [lightningAmount, setLightningAmount] = useState("");
+  const [lightningInvoice, setLightningInvoice] = useState("");
+  const [lightningQuoteId, setLightningQuoteId] = useState("");
+  const [lightningExpiry, setLightningExpiry] = useState(0);
+  const [checkingPayment, setCheckingPayment] = useState(false);
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+  const paymentCheckInterval = useRef<NodeJS.Timeout | null>(null);
 
   // Nostr-specific state
   const [showNostrWithdraw, setShowNostrWithdraw] = useState(false);
@@ -71,6 +82,137 @@ export default function WalletPanel() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLightningDeposit = async () => {
+    const amount = parseInt(lightningAmount);
+
+    if (!amount || amount <= 0) {
+      setMessage("Please enter a valid amount");
+      return;
+    }
+
+    setMessage("Generating Lightning invoice...");
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/balance/deposit-lightning", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ amount }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setLightningInvoice(data.invoice);
+        setLightningQuoteId(data.quoteId);
+        setLightningExpiry(data.expiry);
+        setMessage(`✅ Lightning invoice generated! Pay ${amount} sat to deposit.`);
+
+        // Start checking for payment
+        startPaymentCheck(data.quoteId);
+      } else {
+        setMessage(`❌ ${data.error || "Failed to create Lightning invoice"}`);
+      }
+    } catch (error) {
+      setMessage(`❌ Network error: ${error}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startPaymentCheck = (quoteId: string) => {
+    // Clear any existing interval
+    if (paymentCheckInterval.current) {
+      clearInterval(paymentCheckInterval.current);
+    }
+
+    setCheckingPayment(true);
+
+    paymentCheckInterval.current = setInterval(async () => {
+      try {
+        const response = await fetch("/api/balance/deposit-lightning-claim", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ quoteId }),
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.paid) {
+          // Payment received!
+          if (paymentCheckInterval.current) {
+            clearInterval(paymentCheckInterval.current);
+            paymentCheckInterval.current = null;
+          }
+          setCheckingPayment(false);
+          setPaymentConfirmed(true);
+          setMessage(`✅ Payment received! Deposited ${data.amount} sat!`);
+
+          // Update balance
+          if (data.newBalance !== undefined) {
+            updateBalance(data.newBalance);
+          } else {
+            await refreshUser();
+          }
+
+          // Reset Lightning deposit state after showing success
+          setTimeout(() => {
+            setLightningInvoice("");
+            setLightningQuoteId("");
+            setLightningAmount("");
+            setPaymentConfirmed(false);
+            setMessage("");
+            setShowDeposit(false);
+          }, 3000);
+        } else if (data.error && data.error.includes("expired")) {
+          // Invoice expired
+          if (paymentCheckInterval.current) {
+            clearInterval(paymentCheckInterval.current);
+            paymentCheckInterval.current = null;
+          }
+          setCheckingPayment(false);
+          setMessage("❌ Lightning invoice expired. Please try again.");
+          setLightningInvoice("");
+          setLightningQuoteId("");
+        }
+        // Otherwise keep checking
+      } catch (error) {
+        console.error("Payment check error:", error);
+      }
+    }, 3000); // Check every 3 seconds
+
+    // Stop checking after 10 minutes
+    setTimeout(() => {
+      if (paymentCheckInterval.current) {
+        clearInterval(paymentCheckInterval.current);
+        paymentCheckInterval.current = null;
+      }
+      setCheckingPayment(false);
+    }, 10 * 60 * 1000);
+  };
+
+  // Cleanup payment check interval on unmount
+  useEffect(() => {
+    return () => {
+      if (paymentCheckInterval.current) {
+        clearInterval(paymentCheckInterval.current);
+      }
+    };
+  }, []);
+
+  const copyLightningInvoice = () => {
+    navigator.clipboard.writeText(lightningInvoice);
+    setCopied(true);
+    setMessage("✅ Invoice copied to clipboard!");
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
   };
 
   const handleWithdrawAll = () => {
@@ -446,9 +588,9 @@ export default function WalletPanel() {
       {/* Deposit Section */}
       {showDeposit && (
         <div className="mb-6 glass rounded-2xl p-6 border border-neon-blue/30 animate-fade-in">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-4">
             <h4 className="text-xl font-bold bg-gradient-to-r from-neon-blue to-neon-purple bg-clip-text text-transparent">
-              Deposit Cashu Token
+              Deposit Funds
             </h4>
             <button
               onClick={() => setShowHowItWorksModal(true)}
@@ -460,62 +602,272 @@ export default function WalletPanel() {
               How It Works
             </button>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            Your token will be verified and added to your secure server-side balance
-          </p>
 
-          {/* Mode-specific Warning */}
-          <div className={`mb-4 p-3 rounded-xl border ${
-            walletMode === "demo"
-              ? "bg-neon-yellow/10 border-neon-yellow/40"
-              : "bg-neon-green/10 border-neon-green/40"
-          }`}>
-            <div className="flex items-start gap-2">
-              {walletMode === "demo" && <span className="text-xl">⚠️</span>}
-              <div>
-                <p className="text-xs text-gray-300">
-                  {walletMode === "demo" ? (
-                    <>
-                      <span className="font-bold text-neon-yellow">Demo Mode - Test tokens only:</span> Tokens must be from <code className="text-neon-blue">{mintUrl}</code> mint.
-                    </>
-                  ) : (
-                    <>
-                      <span className="font-bold text-neon-green">Real Mode - Cashu tokens:</span> Tokens must be from <code className="text-neon-blue">{mintUrl}</code> mint.
-                    </>
-                  )}
-                </p>
+          {/* Deposit Method Toggle */}
+          <div className="mb-4">
+            <div className="relative w-full h-12 rounded-lg glass border border-white/10">
+              <div className="relative h-full flex items-center">
+                <button
+                  onClick={() => setDepositMethod("lightning")}
+                  className="w-1/2 flex items-center justify-center z-10 h-full rounded-lg transition-all duration-300"
+                >
+                  <span className={`text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 ${
+                    depositMethod === "lightning" ? "text-white" : "text-gray-500"
+                  }`}>
+                    <span>⚡</span>
+                    Lightning
+                  </span>
+                </button>
+                <button
+                  onClick={() => {
+                    setDepositMethod("cashu");
+                    setLightningInvoice("");
+                    setLightningQuoteId("");
+                    setPaymentConfirmed(false);
+                  }}
+                  className="w-1/2 flex items-center justify-center z-10 h-full rounded-lg transition-all duration-300"
+                >
+                  <span className={`text-sm font-semibold transition-all duration-300 ${
+                    depositMethod === "cashu" ? "text-white" : "text-gray-500"
+                  }`}>
+                    Cashu Token
+                  </span>
+                </button>
+                <div
+                  className={`absolute top-1 h-[calc(100%-8px)] w-[calc(50%-4px)] rounded-md transition-all duration-300 ${
+                    depositMethod === "cashu"
+                      ? "bg-neon-blue/20 left-[calc(50%+2px)]"
+                      : "bg-neon-yellow/20 left-1"
+                  }`}
+                />
               </div>
             </div>
           </div>
 
-          <textarea
-            value={depositToken}
-            onChange={(e) => setDepositToken(e.target.value)}
-            placeholder="Paste your Cashu token here (cashuA...)..."
-            className="w-full p-4 rounded-xl bg-black/20 dark:bg-white/5 border-2 border-gray-300 dark:border-gray-700 focus:border-neon-blue focus:outline-none min-h-32 text-sm font-mono transition-all duration-300 resize-none"
-            disabled={loading}
-          />
-          <div className="grid grid-cols-2 gap-3 mt-4">
-            <button
-              onClick={handleDeposit}
-              disabled={loading}
-              className={`bg-neon-blue text-white px-6 py-3 rounded-xl font-bold transition-all duration-300 ${
-                loading ? 'opacity-50 cursor-not-allowed' : 'transform hover:scale-105'
-              }`}
-            >
-              {loading ? "Processing..." : "Add to Balance"}
-            </button>
-            <button
-              onClick={() => {
-                setShowDeposit(false);
-                setDepositToken("");
-              }}
-              disabled={loading}
-              className="glass rounded-xl px-6 py-3 font-semibold border border-white/10 hover:border-white/30 transition-all duration-300 transform hover:scale-105"
-            >
-              Cancel
-            </button>
-          </div>
+          {depositMethod === "lightning" ? (
+            <>
+              {/* Lightning Deposit UI */}
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Deposit Bitcoin via Lightning Network - converted to Cashu tokens automatically
+              </p>
+
+              {!lightningInvoice ? (
+                <>
+                  {/* Amount Input */}
+                  <div className="mb-4 p-3 rounded-xl bg-neon-yellow/10 border border-neon-yellow/40">
+                    <div className="flex items-start gap-2">
+                      <span className="text-xl">⚡</span>
+                      <div>
+                        <p className="text-xs text-gray-300">
+                          <span className="font-bold text-neon-yellow">Lightning Network:</span> Pay a Lightning invoice to deposit sats directly to your balance.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <input
+                    type="number"
+                    value={lightningAmount}
+                    onChange={(e) => setLightningAmount(e.target.value)}
+                    placeholder="Enter amount in sats (e.g. 1000)"
+                    className="w-full p-4 rounded-xl bg-black/20 dark:bg-white/5 border-2 border-gray-300 dark:border-gray-700 focus:border-neon-yellow focus:outline-none text-lg font-semibold transition-all duration-300 mb-4"
+                    disabled={loading}
+                    min="1"
+                  />
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={handleLightningDeposit}
+                      disabled={loading}
+                      className={`bg-neon-yellow text-black px-6 py-3 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 ${
+                        loading ? 'opacity-50 cursor-not-allowed' : 'transform hover:scale-105'
+                      }`}
+                    >
+                      {loading ? (
+                        "Generating..."
+                      ) : (
+                        <>
+                          <span>⚡</span>
+                          Create Invoice
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowDeposit(false);
+                        setLightningAmount("");
+                        setPaymentConfirmed(false);
+                      }}
+                      disabled={loading}
+                      className="glass rounded-xl px-6 py-3 font-semibold border border-white/10 hover:border-white/30 transition-all duration-300 transform hover:scale-105"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Display Invoice */}
+                  <div className={`mb-4 p-4 rounded-xl border ${
+                    paymentConfirmed
+                      ? "bg-neon-green/10 border-neon-green/40"
+                      : "bg-neon-yellow/10 border-neon-yellow/40"
+                  }`}>
+                    <div className="flex items-start gap-2 mb-2">
+                      <span className="text-2xl">
+                        {paymentConfirmed ? "✅" : "⚡"}
+                      </span>
+                      <div className="flex-1">
+                        <h5 className={`font-bold text-lg mb-1 ${
+                          paymentConfirmed ? "text-neon-green" : "text-neon-yellow"
+                        }`}>
+                          {paymentConfirmed ? "Payment Confirmed!" : "Lightning Invoice Ready"}
+                        </h5>
+                        <div className="flex items-center gap-2">
+                          {paymentConfirmed ? (
+                            <>
+                              <svg className="h-4 w-4 text-neon-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              <p className="text-xs text-gray-300">Crediting your balance...</p>
+                            </>
+                          ) : checkingPayment ? (
+                            <>
+                              <svg className="animate-spin h-4 w-4 text-neon-yellow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              <p className="text-xs text-gray-300">Waiting for payment...</p>
+                            </>
+                          ) : (
+                            <p className="text-xs text-gray-300">Scan the QR code or copy the invoice to pay</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* QR Code Display */}
+                  <div className="flex justify-center mb-4">
+                    <div className="p-3 bg-white rounded-xl">
+                      <QRCodeSVG
+                        value={lightningInvoice.toUpperCase()}
+                        size={256}
+                        level="M"
+                        includeMargin={false}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Invoice Text */}
+                  <details className="mb-4">
+                    <summary className="cursor-pointer text-sm text-gray-400 hover:text-gray-300 transition-colors mb-2">
+                      Show invoice text
+                    </summary>
+                    <div className="p-4 glass rounded-xl break-all text-xs font-mono border border-neon-yellow/30 max-h-40 overflow-y-auto">
+                      {lightningInvoice}
+                    </div>
+                  </details>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={copyLightningInvoice}
+                      className="bg-neon-yellow text-black px-6 py-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
+                    >
+                      {copied ? (
+                        <>
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                          Copy Invoice
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowDeposit(false);
+                        setLightningInvoice("");
+                        setLightningQuoteId("");
+                        setLightningAmount("");
+                        setCheckingPayment(false);
+                        setPaymentConfirmed(false);
+                      }}
+                      className="glass rounded-xl px-6 py-3 font-semibold border border-white/10 hover:border-white/30 transition-all duration-300 transform hover:scale-105"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Cashu Token Deposit UI */}
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Your token will be verified and added to your secure server-side balance
+              </p>
+
+              {/* Mode-specific Warning */}
+              <div className={`mb-4 p-3 rounded-xl border ${
+                walletMode === "demo"
+                  ? "bg-neon-yellow/10 border-neon-yellow/40"
+                  : "bg-neon-green/10 border-neon-green/40"
+              }`}>
+                <div className="flex items-start gap-2">
+                  {walletMode === "demo" && <span className="text-xl">⚠️</span>}
+                  <div>
+                    <p className="text-xs text-gray-300">
+                      {walletMode === "demo" ? (
+                        <>
+                          <span className="font-bold text-neon-yellow">Demo Mode - Test tokens only:</span> Tokens must be from <code className="text-neon-blue">{mintUrl}</code> mint.
+                        </>
+                      ) : (
+                        <>
+                          <span className="font-bold text-neon-green">Real Mode - Cashu tokens:</span> Tokens must be from <code className="text-neon-blue">{mintUrl}</code> mint.
+                        </>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <textarea
+                value={depositToken}
+                onChange={(e) => setDepositToken(e.target.value)}
+                placeholder="Paste your Cashu token here (cashuA...)..."
+                className="w-full p-4 rounded-xl bg-black/20 dark:bg-white/5 border-2 border-gray-300 dark:border-gray-700 focus:border-neon-blue focus:outline-none min-h-32 text-sm font-mono transition-all duration-300 resize-none"
+                disabled={loading}
+              />
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                <button
+                  onClick={handleDeposit}
+                  disabled={loading}
+                  className={`bg-neon-blue text-white px-6 py-3 rounded-xl font-bold transition-all duration-300 ${
+                    loading ? 'opacity-50 cursor-not-allowed' : 'transform hover:scale-105'
+                  }`}
+                >
+                  {loading ? "Processing..." : "Add to Balance"}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowDeposit(false);
+                    setDepositToken("");
+                  }}
+                  disabled={loading}
+                  className="glass rounded-xl px-6 py-3 font-semibold border border-white/10 hover:border-white/30 transition-all duration-300 transform hover:scale-105"
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
 
