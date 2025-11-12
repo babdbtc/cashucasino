@@ -34,6 +34,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Additional user-based rate limiting (prevents VPN/TOR bypass)
+    if (isRateLimited(`user:${user.id}`, 5, 60 * 1000)) {
+      return NextResponse.json(
+        { error: "Too many invoice requests from your account. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const { amount } = body;
 
@@ -49,6 +57,15 @@ export async function POST(req: NextRequest) {
     if (amount < 1) {
       return NextResponse.json(
         { error: "Minimum deposit is 1 sat" },
+        { status: 400 }
+      );
+    }
+
+    // Check maximum amount (1M sats = 0.01 BTC ≈ $1000)
+    const MAX_DEPOSIT_SATS = 1000000;
+    if (amount > MAX_DEPOSIT_SATS) {
+      return NextResponse.json(
+        { error: `Maximum deposit is ${MAX_DEPOSIT_SATS.toLocaleString()} sats (${(MAX_DEPOSIT_SATS / 100000000).toFixed(2)} BTC)` },
         { status: 400 }
       );
     }

@@ -307,6 +307,20 @@ export async function createLightningInvoice(
   // Create mint quote using Cashu wallet
   const mintQuote = await wallet.createMintQuote(amount);
 
+  // Validate mint response
+  if (!mintQuote.quote || typeof mintQuote.quote !== 'string') {
+    throw new Error('Invalid mint quote response: missing or invalid quote ID');
+  }
+  if (!mintQuote.request || typeof mintQuote.request !== 'string') {
+    throw new Error('Invalid mint quote response: missing or invalid invoice');
+  }
+  if (typeof mintQuote.expiry !== 'number' || mintQuote.expiry <= 0) {
+    throw new Error('Invalid mint quote response: missing or invalid expiry');
+  }
+  if (!mintQuote.state || typeof mintQuote.state !== 'string') {
+    throw new Error('Invalid mint quote response: missing or invalid state');
+  }
+
   console.log(`[House Wallet ${mode.toUpperCase()}] Lightning invoice created:`, {
     quoteId: mintQuote.quote,
     invoice: mintQuote.request,
@@ -339,16 +353,24 @@ export async function checkLightningPayment(
   // Check mint quote status
   const quoteStatus = await wallet.checkMintQuote(quoteId);
 
+  // Validate mint response
+  if (!quoteStatus.state || typeof quoteStatus.state !== 'string') {
+    throw new Error('Invalid mint quote status response: missing or invalid state');
+  }
+  // Note: expiry may not always be present in the response, so we'll handle it gracefully
+  const expiry = typeof quoteStatus.expiry === 'number' ? quoteStatus.expiry : 0;
+
   console.log(`[House Wallet ${mode.toUpperCase()}] Lightning payment status:`, {
     quoteId,
     state: quoteStatus.state,
     paid: quoteStatus.state === "PAID",
+    expiry: expiry || 'not provided',
   });
 
   return {
     paid: quoteStatus.state === "PAID",
     state: quoteStatus.state,
-    expiry: quoteStatus.expiry,
+    expiry: expiry,
   };
 }
 
@@ -372,8 +394,22 @@ export async function mintFromLightning(
   // Mint proofs from the paid quote
   const mintedProofs = await wallet.mintProofs(amount, quoteId);
 
+  // Validate mint response
+  if (!Array.isArray(mintedProofs)) {
+    throw new Error('Invalid mint proofs response: expected array of proofs');
+  }
+  if (mintedProofs.length === 0) {
+    throw new Error('Invalid mint proofs response: no proofs returned');
+  }
+
   // Calculate amount minted
   const amountMinted = mintedProofs.reduce((sum, p) => sum + p.amount, 0);
+
+  // Validate minted amount matches requested amount
+  if (amountMinted !== amount) {
+    console.error(`[House Wallet ${mode.toUpperCase()}] ERROR: Minted amount (${amountMinted}) differs from requested amount (${amount})`);
+    throw new Error(`Mint amount mismatch: expected ${amount} sats, got ${amountMinted} sats. Possible mint malfunction or attack.`);
+  }
 
   // Add to our stored proofs
   data.proofs.push(...mintedProofs);

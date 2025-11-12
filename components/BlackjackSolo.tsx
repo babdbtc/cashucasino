@@ -88,7 +88,7 @@ export default function BlackjackSolo() {
 
   const addChipToBet = (value: number, event?: React.MouseEvent<HTMLButtonElement>) => {
     if ((betAmount + value) > (user?.balance || 0)) return;
-    if ((betAmount + value) > 5000) return;
+    if ((betAmount + value) > 2500) return;
 
     const newChip = {
       id: Date.now(),
@@ -742,7 +742,7 @@ export default function BlackjackSolo() {
                     <button
                       key={value}
                       onClick={(e) => addChipToBet(value, e)}
-                      disabled={gameState !== "betting" || betAmount + value > (user?.balance || 0) || betAmount + value > 5000}
+                      disabled={gameState !== "betting" || betAmount + value > (user?.balance || 0) || betAmount + value > 2500}
                       className={`chip-button relative w-14 h-14 mx-auto rounded-full bg-gradient-to-br ${getChipColor(value)} border-4 border-white shadow-xl transform hover:scale-110 transition active:scale-95 disabled:opacity-30 disabled:grayscale disabled:transform-none overflow-hidden`}
                       data-chip-value={value}
                     >

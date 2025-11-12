@@ -252,6 +252,7 @@ function initializeDatabase(database: Database.Database) {
   `);
 
   // Lightning deposit quotes - Tracks pending Lightning deposits
+  // States: UNPAID, PROCESSING, PAID, EXPIRED, MINT_FAILED, CREDIT_FAILED, CHECK_FAILED
   database.exec(`
     CREATE TABLE IF NOT EXISTS lightning_deposits (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -262,7 +263,36 @@ function initializeDatabase(database: Database.Database) {
       state TEXT NOT NULL DEFAULT 'UNPAID',
       expiry INTEGER NOT NULL,
       wallet_mode TEXT DEFAULT 'demo',
+      retry_count INTEGER DEFAULT 0,
       created_at INTEGER NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Migration: Add retry_count column if it doesn't exist
+  try {
+    const lightningTableInfo = database.prepare("PRAGMA table_info(lightning_deposits)").all() as Array<{ name: string }>;
+    const hasRetryCount = lightningTableInfo.some(col => col.name === "retry_count");
+
+    if (!hasRetryCount) {
+      console.log("[Database Migration] Adding retry_count column to lightning_deposits table");
+      database.exec(`ALTER TABLE lightning_deposits ADD COLUMN retry_count INTEGER DEFAULT 0`);
+    }
+  } catch (error) {
+    // Table might not exist yet, which is fine
+  }
+
+  // Failed credit attempts - For manual recovery when minting succeeds but balance credit fails
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS failed_credits (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      quote_id TEXT NOT NULL,
+      amount INTEGER NOT NULL,
+      error_message TEXT,
+      created_at INTEGER NOT NULL,
+      resolved BOOLEAN DEFAULT 0,
+      resolved_at INTEGER,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )
   `);
@@ -281,6 +311,8 @@ function initializeDatabase(database: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_lightning_deposits_user_id ON lightning_deposits(user_id);
     CREATE INDEX IF NOT EXISTS idx_lightning_deposits_quote_id ON lightning_deposits(quote_id);
     CREATE INDEX IF NOT EXISTS idx_lightning_deposits_state ON lightning_deposits(state);
+    CREATE INDEX IF NOT EXISTS idx_failed_credits_user_id ON failed_credits(user_id);
+    CREATE INDEX IF NOT EXISTS idx_failed_credits_resolved ON failed_credits(resolved);
   `);
 }
 
