@@ -18,7 +18,9 @@ A privacy-focused online casino powered by Cashu ecash. Play provably fair casin
 - **Dual Wallet System**:
   - **Demo Mode**: Play with test tokens from testnut.cashu.space
   - **Real Mode**: Play with real Bitcoin via mint.minibits.cash
-- **Instant Deposits**: Paste Cashu token and start playing immediately
+- **Multiple Deposit Methods**:
+  - **Lightning Network**: Generate invoice, scan QR code, pay with any Lightning wallet - automatically converts to Cashu tokens and credits your balance
+  - **Cashu Tokens**: Paste Cashu token and start playing immediately
 - **Multiple Withdrawal Methods**:
   - **Standard**: Generate Cashu token string to copy/paste into your wallet
   - **Nostr Instant Withdraw**: Automatic delivery to your Nostr wallet via encrypted DM (for Nostr-authenticated users)
@@ -122,7 +124,45 @@ Cashu Casino integrates deeply with Nostr for seamless, privacy-preserving authe
 
 ## How to Deposit & Play
 
-### Step 1: Get Cashu Tokens
+### Deposit Method 1: Lightning Network (Recommended)
+
+The easiest way to deposit - works with any Lightning wallet!
+
+**What you need**:
+- Any Lightning Network wallet (Phoenix, Muun, Zeus, BlueWallet, etc.)
+- Logged in to your casino account
+
+**How it works**:
+1. Create account or login with Nostr
+2. Select wallet mode (Demo or Real)
+3. Click any game → Open **Wallet** panel
+4. Click **⚡ Lightning** tab (default)
+5. Enter amount in sats (minimum 1 sat)
+6. Click **Create Invoice**
+7. Scan the QR code with your Lightning wallet, or copy the invoice string
+8. Pay the invoice in your Lightning wallet
+9. Wait a few seconds - the casino automatically detects payment
+10. Balance updates automatically - ready to play!
+
+**How it works behind the scenes**:
+- Casino generates a Lightning invoice through the Cashu mint
+- You pay the invoice with any Lightning wallet
+- Once paid, the mint converts your Lightning payment to Cashu tokens
+- Casino receives the Cashu tokens and credits your balance
+- All automatic - no manual steps needed!
+
+**Benefits**:
+- Works with any Lightning wallet - no need for Cashu-specific wallet
+- Automatic conversion from Lightning → Cashu → Balance
+- QR code for easy mobile scanning
+- Real-time payment detection with visual confirmation
+- Secure and instant
+
+### Deposit Method 2: Cashu Tokens
+
+For users who already have Cashu tokens.
+
+**Step 1: Get Cashu Tokens**
 
 **For Real Mode (Bitcoin)**:
 1. Download a Cashu wallet:
@@ -137,12 +177,12 @@ Cashu Casino integrates deeply with Nostr for seamless, privacy-preserving authe
 2. Add test mint: `testnut.cashu.space`
 3. Get free test tokens from faucet
 
-### Step 2: Deposit to Casino
+**Step 2: Deposit to Casino**
 
 1. Create account or login with Nostr
 2. Select wallet mode (Demo or Real)
 3. Click any game → Open **Wallet** panel
-4. Click **Deposit Cashu Token**
+4. Click **Cashu Token** tab
 5. In your Cashu wallet app:
    - Select amount to send
    - Copy the token string (starts with `cashuA...`)
@@ -205,6 +245,8 @@ Withdraw using Nostr Zap protocol with Cashu tokens.
 
 ### Payments
 - **Protocol**: Cashu ecash (@cashu/cashu-ts v3.0.2)
+- **Lightning Network**: NUT-04/NUT-05 mint quotes for Lightning ⇄ Cashu conversion
+- **QR Codes**: qrcode.react for Lightning invoice display
 - **Mints**:
   - Production: mint.minibits.cash
   - Testing: testnut.cashu.space
@@ -317,6 +359,158 @@ npm start
 - Balance updates validated server-side
 - Bet limits enforced (1-1000 sats)
 
+## Lightning Deposit Implementation
+
+The Lightning deposit feature allows users to deposit Bitcoin via any Lightning Network wallet, with automatic conversion to Cashu tokens and balance crediting.
+
+### Architecture
+
+**Flow**: Lightning Payment → Cashu Mint → Cashu Tokens → User Balance
+
+1. User requests deposit amount
+2. Casino creates Lightning invoice via Cashu mint (NUT-04)
+3. User pays invoice with any Lightning wallet
+4. Casino polls mint to check payment status (NUT-05)
+5. Once paid, mint converts Lightning → Cashu tokens
+6. Casino mints tokens and credits user balance
+7. All automatic - no manual token handling needed
+
+### Database Schema
+
+**`lightning_deposits` Table**:
+```sql
+CREATE TABLE lightning_deposits (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  quote_id TEXT UNIQUE NOT NULL,      -- Mint quote identifier
+  amount INTEGER NOT NULL,             -- Amount in sats
+  invoice TEXT NOT NULL,               -- Lightning invoice (BOLT11)
+  state TEXT NOT NULL DEFAULT 'UNPAID', -- UNPAID, PAID, EXPIRED
+  expiry INTEGER NOT NULL,             -- Unix timestamp
+  wallet_mode TEXT DEFAULT 'demo',     -- demo or real
+  created_at INTEGER NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+```
+
+### API Endpoints
+
+**`POST /api/balance/deposit-lightning`** - Create Lightning invoice
+- **Auth**: Required (session-based)
+- **Rate Limit**: 10 requests per minute per IP
+- **Input**: `{ amount: number }` (minimum 1 sat)
+- **Output**: `{ quoteId, invoice, amount, expiry, state }`
+- **Function**: Creates Lightning invoice via `wallet.createMintQuote()`
+- **Storage**: Stores invoice in `lightning_deposits` table
+
+**`POST /api/balance/deposit-lightning-claim`** - Check payment and credit balance
+- **Auth**: Required (session-based)
+- **Rate Limit**: 20 requests per minute per IP (allows polling)
+- **Input**: `{ quoteId: string }`
+- **Output**: `{ success, paid, amount?, newBalance? }`
+- **Function**:
+  1. Checks payment status via `wallet.checkMintQuote()`
+  2. If paid, mints tokens via `wallet.mintProofs()`
+  3. Credits user balance atomically
+  4. Updates database state to 'PAID'
+- **Polling**: Frontend checks every 3 seconds until payment confirmed
+
+### Core Functions (`lib/wallet-manager.ts`)
+
+**`createLightningInvoice(amount, mode)`**
+```typescript
+// Creates Lightning invoice via Cashu mint
+const mintQuote = await wallet.createMintQuote(amount);
+return {
+  quoteId: mintQuote.quote,      // Unique quote identifier
+  invoice: mintQuote.request,     // BOLT11 invoice string
+  expiry: mintQuote.expiry,       // Unix timestamp
+  state: mintQuote.state          // UNPAID, PAID, etc.
+};
+```
+
+**`checkLightningPayment(quoteId, mode)`**
+```typescript
+// Checks if Lightning invoice has been paid
+const quoteStatus = await wallet.checkMintQuote(quoteId);
+return {
+  paid: quoteStatus.state === "PAID",
+  state: quoteStatus.state,
+  expiry: quoteStatus.expiry
+};
+```
+
+**`mintFromLightning(amount, quoteId, mode)`**
+```typescript
+// Mints Cashu tokens from paid Lightning invoice
+const mintedProofs = await wallet.mintProofs(amount, quoteId);
+// Adds proofs to house wallet storage
+// Returns amount minted
+```
+
+### Frontend Implementation
+
+**Location**: `components/WalletPanel.tsx`
+
+**Features**:
+- Tab-based UI (Lightning / Cashu Token)
+- QR code display for easy mobile scanning
+- Real-time payment polling (3-second intervals)
+- Loading spinner while waiting for payment
+- Success confirmation with checkmark animation
+- Auto-close after payment confirmed
+- Invoice copy-to-clipboard functionality
+
+**State Management**:
+```typescript
+const [depositMethod, setDepositMethod] = useState<"cashu" | "lightning">("lightning");
+const [lightningInvoice, setLightningInvoice] = useState("");
+const [checkingPayment, setCheckingPayment] = useState(false);
+const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+```
+
+**Payment Detection Flow**:
+1. User clicks "Create Invoice"
+2. Invoice generated and QR code displayed
+3. Polling starts (every 3 seconds)
+4. When paid, `paymentConfirmed` set to true
+5. Success animation shown
+6. Balance updated
+7. Modal auto-closes after 3 seconds
+
+### Security Considerations
+
+- **Rate Limiting**: Invoice creation (10/min) and claim checks (20/min) to prevent abuse
+- **Authentication**: All endpoints require valid session
+- **Ownership Verification**: Quote ID must belong to requesting user
+- **Atomic Operations**: Balance updates use existing transaction-safe `addToBalance()`
+- **Double-Credit Prevention**: Database checks if quote already paid before minting
+- **Expiry Handling**: Expired invoices automatically marked and cleaned up
+- **Error Recovery**: Critical errors logged for manual intervention if needed
+
+### Cleanup & Maintenance
+
+- **Expired Invoices**: Automatically deleted hourly if unpaid and past expiry
+- **Abandoned Checks**: Frontend stops polling after 10 minutes
+- **Database Indexes**: Optimized for fast quote lookups
+
+### Testing
+
+**Demo Mode**:
+- Uses `testnut.cashu.space` mint
+- Test Lightning payments (may require test Lightning wallet)
+
+**Real Mode**:
+- Uses `mint.minibits.cash` mint
+- Real Bitcoin Lightning payments
+
+### Error Handling
+
+- **Invoice Creation Failure**: Returns 500 with user-friendly error
+- **Payment Check Failure**: Returns 500, frontend continues polling
+- **Minting Failure**: Critical error logged, support notified
+- **Balance Credit Failure**: Critical error logged with quote ID for recovery
+
 ## RTP Transparency
 
 All games have their RTP (Return to Player) calculated and verified through Monte Carlo simulations.
@@ -381,6 +575,7 @@ Contributions are welcome! Please follow these guidelines:
 - [x] RTP simulation tools
 - [x] Cross-tab balance sync
 - [x] Turbo mode & autoplay
+- [x] Lightning Network deposits with QR codes
 - [ ] Blackjack (in progress)
 - [ ] Roulette
 - [ ] Dice game
