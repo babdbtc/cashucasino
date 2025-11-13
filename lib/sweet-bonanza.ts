@@ -108,13 +108,13 @@ const SCATTER_PAYOUTS: Record<number, number> = {
 const BOMB_MULTIPLIER_VALUES = [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80, 100];
 
 // Bomb multiplier distribution - low multipliers more common, very high multipliers rare
-// ~48% low (2x-6x), ~35% mid (8x-15x), ~13% high (20x-30x), ~4% very high (40x+)
+// ~45% low (2x-6x), ~33% mid (8x-15x), ~15% high (20x-30x), ~7% very high (40x+)
 const BOMB_WEIGHTS = [
-  48, 42, 38, 36, 34,  // 2x-6x (very common - 48% combined, increased)
-  36, 34, 30, 26,      // 8x-15x (common - 35% combined, slightly increased)
-  16, 12, 8,           // 20x-30x (uncommon - 13% combined, reduced)
-  3, 2,                // 40x-50x (rare - 2%, reduced from 4%)
-  1, 1, 0              // 60x-100x (very rare - 1%, reduced from 3%, 100x removed)
+  45, 40, 36, 34, 32,  // 2x-6x (very common - 45% combined, increased)
+  35, 32, 28, 25,      // 8x-15x (common - 33% combined)
+  18, 14, 10,          // 20x-30x (uncommon - 15% combined)
+  5, 4,                // 40x-50x (rare - 4%)
+  2, 1, 1              // 60x-100x (very rare - 3%)
 ];
 
 const ROWS = 5;
