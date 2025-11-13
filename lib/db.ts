@@ -183,10 +183,24 @@ function initializeDatabase(database: Database.Database) {
       amount INTEGER NOT NULL,
       balance_after INTEGER NOT NULL,
       metadata TEXT,
+      cashu_token TEXT,
       created_at INTEGER NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )
   `);
+
+  // Migration: Add cashu_token column if it doesn't exist
+  try {
+    const transactionsTableInfo = database.prepare("PRAGMA table_info(transactions)").all() as Array<{ name: string }>;
+    const hasCashuToken = transactionsTableInfo.some(col => col.name === "cashu_token");
+
+    if (!hasCashuToken) {
+      console.log("[Database Migration] Adding cashu_token column to transactions table");
+      database.exec(`ALTER TABLE transactions ADD COLUMN cashu_token TEXT`);
+    }
+  } catch (error) {
+    // Table might not exist yet, which is fine
+  }
 
   // Game states table for server-side game state (prevents client manipulation)
   database.exec(`

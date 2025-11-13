@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { sendFromHouse, getHouseBalance } from "@/lib/wallet-manager";
 import { isRateLimited } from "@/lib/rate-limiter";
 import { getCurrentUser } from "@/lib/auth-middleware";
-import { subtractFromBalance, getUserBalance, addToBalance } from "@/lib/auth";
+import { subtractFromBalance, getUserBalance, addToBalance, updateWithdrawalToken } from "@/lib/auth";
 import { sendCashuTokenViaDM, fetchNostrProfile } from "@/lib/nostr";
 
 /**
@@ -99,6 +99,9 @@ export async function POST(req: NextRequest) {
     try {
       token = await sendFromHouse(amount, walletMode);
       console.log(`[Withdraw Nostr ${walletMode.toUpperCase()}] User ${user.id} withdrew ${amount} sats`);
+
+      // Save the token in the transaction record for withdrawal history
+      updateWithdrawalToken(user.id, walletMode, token);
     } catch (error) {
       console.error("Withdrawal token creation error:", error);
 
