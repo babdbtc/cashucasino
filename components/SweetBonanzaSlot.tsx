@@ -690,13 +690,6 @@ export default function SweetBonanzaSlot() {
         throw new Error(data.error || "Failed to play spin");
       }
 
-      // Update balance from server response
-      // Always update balance - the server already handles free spins accumulation correctly
-      if (data.newBalance !== undefined) {
-        updateBalance(data.newBalance);
-        console.log('[Sweet Bonanza] Balance updated to:', data.newBalance);
-      }
-
       // Animate initial spin - update bombs first, then grid synchronously
       flushSync(() => {
         setCurrentBombs(data.initialBombs || []);
@@ -874,7 +867,12 @@ export default function SweetBonanzaSlot() {
         setFreeSpinsTotalWin(serverFreeSpinsTotalWin);
       }
 
-      // Balance already updated from API response above
+      // Update balance from server response after animations complete
+      // This ensures the user sees the win amount before the balance updates
+      if (data.newBalance !== undefined) {
+        updateBalance(data.newBalance);
+        console.log('[Sweet Bonanza] Balance updated to:', data.newBalance);
+      }
 
       // Handle autoplay
       if (isAutoplay && autoplay) {
@@ -960,11 +958,6 @@ export default function SweetBonanzaSlot() {
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to buy free spins");
-      }
-
-      // Update balance from server response
-      if (data.newBalance !== undefined) {
-        updateBalance(data.newBalance);
       }
 
       // Animate initial spin - update bombs first, then grid synchronously
@@ -1109,6 +1102,12 @@ export default function SweetBonanzaSlot() {
       // Update state from server
       setFreeSpinsRemaining(data.freeSpinsRemaining || 0);
       setFreeSpinsTotalWin(data.freeSpinsTotalWin || 0);
+
+      // Update balance from server response after animations complete
+      // This ensures the user sees the win amount before the balance updates
+      if (data.newBalance !== undefined) {
+        updateBalance(data.newBalance);
+      }
 
       setSpinning(false);
 
