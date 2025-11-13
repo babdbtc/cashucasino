@@ -38,6 +38,18 @@ export default function WalletPanel() {
   // How It Works modal state
   const [showHowItWorksModal, setShowHowItWorksModal] = useState(false);
 
+  // Withdrawal history state
+  const [showWithdrawalHistory, setShowWithdrawalHistory] = useState(false);
+  const [withdrawalHistory, setWithdrawalHistory] = useState<Array<{
+    id: number;
+    amount: number;
+    token: string;
+    metadata: string | null;
+    created_at: number;
+    date: string;
+  }>>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
   const handleDeposit = async () => {
     if (!depositToken.trim()) {
       setMessage("Please enter a token");
@@ -414,6 +426,38 @@ export default function WalletPanel() {
     }
   };
 
+  const fetchWithdrawalHistory = async () => {
+    setLoadingHistory(true);
+    try {
+      const response = await fetch("/api/balance/withdrawal-history");
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setWithdrawalHistory(data.withdrawals);
+      } else {
+        setMessage(`❌ ${data.error || "Failed to load withdrawal history"}`);
+      }
+    } catch (error) {
+      setMessage(`❌ Network error: ${error}`);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  const handleShowWithdrawalHistory = () => {
+    setShowWithdrawalHistory(true);
+    fetchWithdrawalHistory();
+  };
+
+  const copyToken = (token: string) => {
+    navigator.clipboard.writeText(token);
+    setCopied(true);
+    setMessage("✅ Token copied to clipboard!");
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+  };
+
   // Show nothing if not authenticated (AuthModal will handle login)
   if (!user) {
     return null;
@@ -484,13 +528,14 @@ export default function WalletPanel() {
       </div>
 
       {/* Action Buttons */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-2 gap-4 mb-4">
         <button
           onClick={() => {
             setShowDeposit(true);
             setShowWithdrawInput(false);
             setShowWithdraw(false);
             setShowNostrWithdraw(false);
+            setShowWithdrawalHistory(false);
           }}
           className="bg-neon-blue/20 border-2 border-neon-blue hover:border-neon-purple text-white px-6 py-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
         >
@@ -511,6 +556,7 @@ export default function WalletPanel() {
             setShowDeposit(false);
             setShowWithdraw(false);
             setShowNostrWithdraw(false);
+            setShowWithdrawalHistory(false);
           }}
           disabled={balance === 0}
           className={`bg-neon-purple/20 border-2 border-neon-purple hover:border-neon-pink text-white px-6 py-4 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 ${
@@ -521,6 +567,19 @@ export default function WalletPanel() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
           </svg>
           Withdraw
+        </button>
+      </div>
+
+      {/* Withdrawal History Button */}
+      <div className="mb-6">
+        <button
+          onClick={handleShowWithdrawalHistory}
+          className="w-full bg-gray-700/20 border-2 border-gray-600 hover:border-gray-500 text-white px-6 py-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Withdrawal History
         </button>
       </div>
 
@@ -1038,6 +1097,106 @@ export default function WalletPanel() {
           </div>
         </div>
       </div>
+
+      {/* Withdrawal History Modal */}
+      {showWithdrawalHistory && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          onClick={() => setShowWithdrawalHistory(false)}
+        >
+          <div
+            className="relative max-w-4xl w-full max-h-[90vh] overflow-y-auto glass rounded-3xl p-8 border border-white/20"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-3xl font-black bg-gradient-to-r from-neon-purple to-neon-pink bg-clip-text text-transparent">
+                Withdrawal History
+              </h3>
+              <button
+                onClick={() => setShowWithdrawalHistory(false)}
+                className="w-10 h-10 rounded-full glass border border-white/20 hover:border-white/40 flex items-center justify-center transition-all duration-300 hover:scale-110"
+              >
+                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Loading State */}
+            {loadingHistory ? (
+              <div className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-neon-purple border-t-transparent"></div>
+                <p className="mt-4 text-gray-400">Loading withdrawal history...</p>
+              </div>
+            ) : withdrawalHistory.length === 0 ? (
+              <div className="text-center py-12">
+                <svg className="w-16 h-16 mx-auto mb-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                </svg>
+                <h4 className="text-xl font-bold text-gray-400 mb-2">No Withdrawals Yet</h4>
+                <p className="text-gray-500">Your withdrawal history will appear here</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {withdrawalHistory.map((withdrawal) => (
+                  <div
+                    key={withdrawal.id}
+                    className="glass rounded-xl p-4 border border-white/10 hover:border-white/20 transition-all duration-300"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-2xl font-bold text-neon-purple">{withdrawal.amount.toLocaleString()}</span>
+                          <span className="text-gray-500">sat</span>
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {new Date(withdrawal.created_at).toLocaleString()}
+                        </div>
+                        {withdrawal.metadata && (
+                          <div className="text-xs text-gray-600 mt-1">
+                            {withdrawal.metadata}
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => copyToken(withdrawal.token)}
+                        className="px-4 py-2 rounded-lg bg-neon-purple/20 border border-neon-purple hover:bg-neon-purple/30 text-white text-sm font-semibold transition-all duration-300 transform hover:scale-105 flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        Copy Token
+                      </button>
+                    </div>
+                    <div className="bg-black/40 rounded-lg p-3 border border-white/5">
+                      <p className="text-xs text-gray-400 font-mono break-all">
+                        {withdrawal.token.substring(0, 100)}...
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Info Footer */}
+            {withdrawalHistory.length > 0 && (
+              <div className="mt-6 p-4 rounded-xl bg-neon-blue/10 border border-neon-blue/40">
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">💡</span>
+                  <div>
+                    <h4 className="font-bold text-neon-blue mb-1">Recover Your Tokens</h4>
+                    <p className="text-sm text-gray-300">
+                      If you accidentally closed a withdrawal, you can copy the token from your history and import it into your Cashu wallet.
+                      Simply paste the token into your wallet's receive/claim function.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* How It Works Modal */}
       {showHowItWorksModal && (
