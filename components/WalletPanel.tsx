@@ -1188,7 +1188,7 @@ export default function WalletPanel() {
                     <h4 className="font-bold text-neon-blue mb-1">Recover Your Tokens</h4>
                     <p className="text-sm text-gray-300">
                       If you accidentally closed a withdrawal, you can copy the token from your history and import it into your Cashu wallet.
-                      Simply paste the token into your wallet's receive/claim function.
+                      Simply paste the token into your wallet&apos;s receive/claim function.
                     </p>
                   </div>
                 </div>
