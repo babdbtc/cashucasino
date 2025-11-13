@@ -338,9 +338,36 @@ function findBombs(grid: Symbol[][], existingBombs?: BombData[]): BombData[] {
 
 /**
  * Remove winning symbols and apply gravity (tumble mechanic)
+ * Preserves bomb multipliers as they drop within their columns
  */
-function applyTumble(grid: Symbol[][], clusters: Cluster[], isFreeSpins: boolean): Symbol[][] {
+function applyTumble(
+  grid: Symbol[][],
+  clusters: Cluster[],
+  isFreeSpins: boolean,
+  existingBombs?: BombData[]
+): { grid: Symbol[][], bombMultiplierMap: Map<string, number> } {
   const newGrid: Symbol[][] = grid.map(row => [...row]);
+  const bombMultiplierMap = new Map<string, number>();
+
+  // Track existing bomb multipliers by column (bottom to top order)
+  const bombsByColumn = new Map<number, number[]>();
+  if (existingBombs && isFreeSpins) {
+    for (let col = 0; col < COLS; col++) {
+      bombsByColumn.set(col, []);
+    }
+
+    // Collect bombs from bottom to top for each column
+    for (let row = ROWS - 1; row >= 0; row--) {
+      for (let col = 0; col < COLS; col++) {
+        if (grid[row][col] === "💣") {
+          const bomb = existingBombs.find(b => b.position.row === row && b.position.col === col);
+          if (bomb) {
+            bombsByColumn.get(col)!.push(bomb.multiplier);
+          }
+        }
+      }
+    }
+  }
 
   // Mark winning positions as empty (null)
   for (const cluster of clusters) {
@@ -349,7 +376,7 @@ function applyTumble(grid: Symbol[][], clusters: Cluster[], isFreeSpins: boolean
     }
   }
 
-  // Apply gravity - symbols fall down
+  // Apply gravity - symbols fall down, preserving bomb multipliers
   for (let col = 0; col < COLS; col++) {
     // Collect non-empty symbols from bottom to top
     const column: Symbol[] = [];
@@ -359,18 +386,43 @@ function applyTumble(grid: Symbol[][], clusters: Cluster[], isFreeSpins: boolean
       }
     }
 
+    // Track bomb index for this column
+    let bombIndex = 0;
+    const columnBombMultipliers = bombsByColumn.get(col) || [];
+
     // Fill column from bottom with existing symbols
     for (let row = ROWS - 1; row >= 0; row--) {
       if (column.length > 0) {
-        newGrid[row][col] = column.shift()!;
+        const symbol = column.shift()!;
+        newGrid[row][col] = symbol;
+
+        // If this is a bomb, preserve its multiplier
+        if (symbol === "💣" && isFreeSpins) {
+          const key = `${row},${col}`;
+          if (bombIndex < columnBombMultipliers.length) {
+            // Reuse existing bomb multiplier
+            bombMultiplierMap.set(key, columnBombMultipliers[bombIndex]);
+            bombIndex++;
+          } else {
+            // New bomb that appeared during tumble - assign new multiplier
+            bombMultiplierMap.set(key, getRandomBombMultiplier());
+          }
+        }
       } else {
         // Fill empty spaces with new random symbols (bombs can appear during tumbles in free spins)
-        newGrid[row][col] = getRandomSymbol(isFreeSpins);
+        const symbol = getRandomSymbol(isFreeSpins);
+        newGrid[row][col] = symbol;
+
+        // If new symbol is a bomb, assign new multiplier
+        if (symbol === "💣" && isFreeSpins) {
+          const key = `${row},${col}`;
+          bombMultiplierMap.set(key, getRandomBombMultiplier());
+        }
       }
     }
   }
 
-  return newGrid;
+  return { grid: newGrid, bombMultiplierMap };
 }
 
 /**
@@ -427,14 +479,31 @@ export function playSpin(betAmount: number, isFreeSpins = false, buyingFreeSpins
     }
 
     // Apply tumble (remove winning symbols and drop new ones)
-    grid = applyTumble(grid, clusters, isFreeSpins);
+    // Pass existing bombs to preserve their multipliers as they drop
+    const tumbleResult = applyTumble(grid, clusters, isFreeSpins, bombsBeforeTumble);
+    grid = tumbleResult.grid;
 
     // Count scatters that appear in the new grid after tumble
     const scattersInNewGrid = countScatters(grid);
     totalScatterCount = Math.max(totalScatterCount, scattersInNewGrid); // Track highest scatter count seen
 
-    // Find bombs AFTER tumble for correct display positions (maintain multipliers from seenBombs)
-    const bombsAfterTumble = isFreeSpins ? findBombs(grid, seenBombs) : [];
+    // Find bombs AFTER tumble with preserved multipliers from tumbleResult
+    const bombsAfterTumble: BombData[] = [];
+    if (isFreeSpins) {
+      for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLS; col++) {
+          if (grid[row][col] === "💣") {
+            const key = `${row},${col}`;
+            const multiplier = tumbleResult.bombMultiplierMap.get(key) || getRandomBombMultiplier();
+            bombsAfterTumble.push({ position: { row, col }, multiplier });
+          }
+        }
+      }
+    }
+
+    // Update seenBombs with the new positions and multipliers
+    seenBombs.length = 0;
+    seenBombs.push(...bombsAfterTumble);
 
     // Save this tumble's state (AFTER tumble with new symbols and updated bomb positions)
     tumbles.push({

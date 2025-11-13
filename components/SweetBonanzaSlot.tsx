@@ -1306,7 +1306,7 @@ export default function SweetBonanzaSlot() {
         {/* Game Grid Container */}
         <div className="relative z-10 flex items-center justify-center flex-1 p-2 md:p-6 min-h-0">
           {/* Free Spins Triggered Overlay - Only covers grid area */}
-          {needsManualSpinToStartFreeSpins && (
+          {needsManualSpinToStartFreeSpins && awardedFreeSpins > 0 && (
             <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none bg-black/70 backdrop-blur-sm rounded-3xl">
               <div className="text-center relative">
                 {/* Animated background sparkles */}
