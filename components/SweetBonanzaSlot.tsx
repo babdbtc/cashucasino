@@ -648,6 +648,13 @@ export default function SweetBonanzaSlot() {
     setAwardedFreeSpins(0); // Clear awarded amount once user starts playing
     setExtendedFreeSpins(0); // Clear extended free spins notification
 
+    // Immediately deduct bet from balance for non-free spins (better UX - user sees instant feedback)
+    // Free spins don't cost anything, so skip deduction
+    // Server will validate and handle actual balance changes
+    if (!isFreeSpin) {
+      updateBalance(walletBalance - betAmount);
+    }
+
     // Server will handle balance validation
     setSpinning(true);
     setError(null);
@@ -931,6 +938,10 @@ export default function SweetBonanzaSlot() {
       setError("Cannot buy free spins while already in free spins mode");
       return;
     }
+
+    // Immediately deduct cost from balance (better UX - user sees instant feedback)
+    // Server will validate and handle actual balance changes
+    updateBalance(walletBalance - cost);
 
     setSpinning(true);
     setError(null);
