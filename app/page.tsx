@@ -114,6 +114,13 @@ export default function Home() {
               link="/plinko"
             />
             <GameCard
+              title="Crash"
+              description="Watch the multiplier rise and cash out before it crashes! Fast-paced action!"
+              imageSrc="/images/crash-preview.png"
+              emojis={['📈', '💰', '⚡', '🎯', '💥']}
+              link="/crash"
+            />
+            <GameCard
               title="Mines"
               description="Find the gems and avoid the mines! Cash out anytime with increasing multipliers!"
               imageSrc="/images/mines-preview.png"

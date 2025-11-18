@@ -57,6 +57,13 @@ export default function ArcadePage() {
             emojis={['💎', '💣', '✨', '💰', '⚡']}
             link="/mines"
           />
+          <GameCard
+            title="Crash"
+            description="Watch the rocket fly! Cash out before it crashes for massive multipliers!"
+            imageSrc="/images/crash-preview.png"
+            emojis={['🚀', '📈', '💥', '💰', '⚡']}
+            link="/crash"
+          />
         </div>
 
         {/* Info Cards */}
@@ -130,6 +137,7 @@ export default function ArcadePage() {
                     <th className="text-left p-3 text-gray-400">Feature</th>
                     <th className="text-center p-3 text-blue-400">Plinko</th>
                     <th className="text-center p-3 text-purple-400">Mines</th>
+                    <th className="text-center p-3 text-green-400">Crash</th>
                   </tr>
                 </thead>
                 <tbody className="text-center">
@@ -137,31 +145,37 @@ export default function ArcadePage() {
                     <td className="p-3 text-left text-white font-semibold">Max Multiplier</td>
                     <td className="p-3 text-blue-300">1000x (High Risk)</td>
                     <td className="p-3 text-purple-300">Varies (up to ~50x+)</td>
+                    <td className="p-3 text-green-300">1000x (capped)</td>
                   </tr>
                   <tr className="border-b border-gray-800">
                     <td className="p-3 text-left text-white font-semibold">RTP</td>
                     <td className="p-3 text-blue-300">~98%</td>
                     <td className="p-3 text-purple-300">~97%</td>
+                    <td className="p-3 text-green-300">~95%</td>
                   </tr>
                   <tr className="border-b border-gray-800">
                     <td className="p-3 text-left text-white font-semibold">Game Type</td>
                     <td className="p-3 text-gray-300">Pure chance</td>
                     <td className="p-3 text-gray-300">Choice-based</td>
+                    <td className="p-3 text-gray-300">Timing-based</td>
                   </tr>
                   <tr className="border-b border-gray-800">
                     <td className="p-3 text-left text-white font-semibold">Round Duration</td>
                     <td className="p-3 text-gray-300">3-5 seconds</td>
                     <td className="p-3 text-gray-300">Your pace</td>
+                    <td className="p-3 text-gray-300">Variable (1-30+ sec)</td>
                   </tr>
                   <tr className="border-b border-gray-800">
                     <td className="p-3 text-left text-white font-semibold">Difficulty Options</td>
                     <td className="p-3 text-gray-300">3 risk levels</td>
                     <td className="p-3 text-gray-300">4 presets + custom</td>
+                    <td className="p-3 text-gray-300">Auto-cashout option</td>
                   </tr>
                   <tr>
                     <td className="p-3 text-left text-white font-semibold">Best For</td>
                     <td className="p-3 text-gray-300">Quick thrills</td>
                     <td className="p-3 text-gray-300">Strategic play</td>
+                    <td className="p-3 text-gray-300">Adrenaline rushes</td>
                   </tr>
                 </tbody>
               </table>
