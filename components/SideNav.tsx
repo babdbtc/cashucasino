@@ -9,19 +9,29 @@ import WalletPanel from "./WalletPanel";
 import ThemeToggle from "./ThemeToggle";
 
 const SideNav = () => {
-  const { user } = useAuth();
+  const { user, switchWalletMode, logout } = useAuth();
   const balance = user?.balance || 0;
-  const walletMode = user?.walletMode || "demo";
+  const walletMode = user?.walletMode || "real";
   const [isWalletPanelOpen, setIsWalletPanelOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [switchingMode, setSwitchingMode] = useState(false);
+  const [showAccountId, setShowAccountId] = useState(false);
   const pathname = usePathname();
 
   const navItems = [
     { href: "/", label: "Home", icon: "🏠" },
     { href: "/slots", label: "Slots", icon: "🎰" },
-    { href: "/plinko", label: "Plinko", icon: "🎯" },
+    { href: "/arcade", label: "Arcade Games", icon: "🎮" },
     { href: "/table-games", label: "Table Games", icon: "🎲" },
   ];
+
+  const handleSwitchMode = async (newMode: "demo" | "real") => {
+    if (newMode === walletMode || switchingMode) return;
+
+    setSwitchingMode(true);
+    await switchWalletMode(newMode);
+    setSwitchingMode(false);
+  };
 
   return (
     <>
@@ -48,7 +58,6 @@ const SideNav = () => {
             onClick={() => setIsWalletPanelOpen(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-neon-blue/10 border border-neon-blue/30 hover:border-neon-blue transition-all"
           >
-            <span className="text-xl">💰</span>
             <div className="flex flex-col items-start">
               <span className="text-xs text-gray-400 dark:text-gray-500">Balance {walletMode === "demo" && <span className="text-neon-blue">(Demo)</span>}</span>
               <span className="text-sm font-bold bg-gradient-to-r from-casino-gold to-neon-yellow bg-clip-text text-transparent">
@@ -85,8 +94,11 @@ const SideNav = () => {
               <Image src="/icon.png" alt="Cashu Casino" width={64} height={64} className="rounded-lg" />
             </div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-neon-pink via-neon-purple to-neon-blue bg-clip-text text-transparent animate-gradient bg-[length:200%_auto]">
-              Cashu<span className="text-sm align-middle">.</span>Casino
+              cashucasino.cc
             </h1>
+            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+              #NutNovember
+            </p>
           </div>
 
           {/* Theme Toggle */}
@@ -94,29 +106,8 @@ const SideNav = () => {
             <ThemeToggle />
           </div>
 
-          {/* Balance Card with Neon Glow - hidden on mobile */}
-          <div className="mb-8 relative group hidden md:block">
-            {/* Balance content */}
-            <div className="relative glass rounded-2xl p-5 shadow-2xl">
-              <div className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2 font-semibold">
-                Balance {walletMode === "demo" && <span className="text-neon-blue">(Demo)</span>}
-              </div>
-              <div className="text-3xl font-black bg-gradient-to-r from-casino-gold to-neon-yellow bg-clip-text text-transparent mb-4">
-                {balance} <span className="text-xl">sat</span>
-              </div>
-              <button
-                onClick={() => setIsWalletPanelOpen(true)}
-                className="w-full py-3 px-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 active:scale-95
-                         bg-neon-blue/20 border-2 border-neon-blue/50 hover:border-neon-blue
-                         text-white"
-              >
-                💰 Wallet
-              </button>
-            </div>
-          </div>
-
           {/* Navigation Links */}
-          <nav className="flex-grow space-y-2">
+          <nav className="space-y-2 mb-6">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               return (
@@ -145,19 +136,144 @@ const SideNav = () => {
             })}
           </nav>
 
-          {/* Footer with animated text */}
-          <div className="mt-8 pt-6 border-t border-white/10 dark:border-white/5 text-center">
-            <div className="text-xs font-semibold bg-gradient-to-r from-gray-400 to-gray-600 dark:from-gray-500 dark:to-gray-400 bg-clip-text text-transparent">
-              Powered by Cashu
+          {/* Balance Card with Neon Glow - hidden on mobile */}
+          <div className="flex-grow relative group hidden md:block">
+            {/* Balance content */}
+            <div className="relative glass rounded-2xl p-5 shadow-2xl">
+              <div className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2 font-semibold">
+                Balance {walletMode === "demo" && <span className="text-neon-blue">(Demo)</span>}
+              </div>
+              <div className="text-3xl font-black bg-gradient-to-r from-casino-gold to-neon-yellow bg-clip-text text-transparent mb-4">
+                {balance} <span className="text-xl">sat</span>
+              </div>
+
+              <button
+                onClick={() => setIsWalletPanelOpen(true)}
+                className="w-full py-3 px-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 active:scale-95
+                         bg-neon-blue/20 border-2 border-neon-blue/50 hover:border-neon-blue
+                         text-white mb-3"
+              >
+                Wallet
+              </button>
+
+              {/* Mode Toggle Switch */}
+              <button
+                onClick={() => handleSwitchMode(walletMode === "demo" ? "real" : "demo")}
+                disabled={switchingMode}
+                className={`relative w-full h-8 rounded-lg transition-all duration-300 glass border border-white/10 ${
+                  switchingMode ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-white/20"
+                }`}
+              >
+                <div className="relative h-full flex items-center">
+                  <div className="w-1/2 flex items-center justify-center z-10">
+                    <span className={`text-xs font-semibold transition-all duration-300 ${
+                      walletMode === "demo" ? "text-white" : "text-gray-500"
+                    }`}>
+                      Demo
+                    </span>
+                  </div>
+                  <div className="w-1/2 flex items-center justify-center z-10">
+                    <span className={`text-xs font-semibold transition-all duration-300 ${
+                      walletMode === "real" ? "text-white" : "text-gray-500"
+                    }`}>
+                      Real
+                    </span>
+                  </div>
+                  <div
+                    className={`absolute top-0.5 h-[calc(100%-4px)] w-[calc(50%-4px)] rounded-md transition-all duration-300 ${
+                      walletMode === "real"
+                        ? "bg-white/20 left-[calc(50%+2px)]"
+                        : "bg-white/20 left-0.5"
+                    }`}
+                  />
+                </div>
+              </button>
             </div>
-            <div className="mt-2 flex justify-center gap-1">
-              {[...Array(3)].map((_, i) => (
-                <div
-                  key={i}
-                  className="w-2 h-2 rounded-full bg-gradient-to-r from-neon-pink to-neon-blue animate-bounce"
-                  style={{ animationDelay: `${i * 0.15}s` }}
+          </div>
+
+          {/* Logged In Section - hidden on mobile */}
+          {user && (
+            <div className="mt-6 hidden md:block">
+              <div className="relative glass rounded-2xl p-4 border border-neon-purple/30 shadow-xl">
+                {/* Gradient accent */}
+                <div className="absolute inset-0 bg-gradient-to-br from-neon-pink/5 via-neon-purple/5 to-neon-blue/5 rounded-2xl pointer-events-none" />
+
+                <div className="relative space-y-3">
+                  {/* Header */}
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-neon-green animate-pulse" />
+                    <span className="text-sm font-semibold text-white">
+                      Logged in
+                    </span>
+                  </div>
+
+                  {/* Account ID Toggle */}
+                  <button
+                    onClick={() => setShowAccountId(!showAccountId)}
+                    className="w-full text-xs text-neon-blue hover:text-neon-purple transition-colors duration-300 text-left px-2 py-1 rounded hover:bg-white/5"
+                  >
+                    {showAccountId ? "▼ Hide" : "▶ Show"} Account ID
+                  </button>
+
+                  {/* Account ID Display */}
+                  {showAccountId && (
+                    <div className="text-xs text-gray-400 font-mono bg-black/30 p-3 rounded-lg border border-white/10 break-all">
+                      {user.accountId}
+                    </div>
+                  )}
+
+                  {/* Logout Button */}
+                  <button
+                    onClick={logout}
+                    className="w-full px-4 py-2 rounded-lg font-semibold text-sm bg-gradient-to-r from-red-500/20 to-red-600/20 border border-red-500/30 hover:border-red-400 text-red-300 hover:text-red-200 transition-all duration-300 transform hover:scale-105 active:scale-95"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Footer with social links */}
+          <div className="mt-8 pt-6 border-t border-white/10 dark:border-white/5 text-center">
+            <div className="flex items-center justify-center gap-4">
+              <a
+                href="https://github.com/babdbtc/cashucasino"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center p-2 rounded-lg hover:bg-white/10 transition-all duration-300 group"
+                aria-label="View on GitHub"
+              >
+                <svg
+                  className="w-6 h-6 text-gray-400 dark:text-gray-500 group-hover:text-neon-purple transition-colors duration-300"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
+                </svg>
+              </a>
+              <a
+                href="https://njump.me/npub1d3h6cxpz9y9f20c5rg08hgadjtns4stmyqw75q8spssdp46r635q33wvj0"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center p-2 rounded-lg hover:bg-white/10 transition-all duration-300 group relative"
+                aria-label="Contact on Nostr"
+              >
+                <Image
+                  src="/nostr-icon-grey.png"
+                  alt="Nostr"
+                  width={20}
+                  height={20}
+                  className="rounded group-hover:opacity-0 transition-opacity duration-300"
                 />
-              ))}
+                <Image
+                  src="/nostr-icon.png"
+                  alt="Nostr"
+                  width={20}
+                  height={20}
+                  className="rounded absolute opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                />
+              </a>
             </div>
           </div>
         </div>
@@ -165,13 +281,13 @@ const SideNav = () => {
 
       {/* Enhanced Wallet Panel Modal */}
       {isWalletPanelOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] animate-fade-in">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] animate-fade-in p-4">
           {/* Modal backdrop with gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-neon-pink/10 via-neon-purple/10 to-neon-blue/10" />
 
           {/* Modal content */}
-          <div className="relative transform transition-all duration-500 ease-out scale-100">
-            <div className="relative glass rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl border-2 border-neon-purple/30">
+          <div className="relative transform transition-all duration-500 ease-out scale-100 w-full max-w-2xl max-h-[90vh]">
+            <div className="relative glass rounded-3xl shadow-2xl border-2 border-neon-purple/30 overflow-hidden flex flex-col max-h-[90vh]">
               {/* Close button with neon effect */}
               <button
                 onClick={() => setIsWalletPanelOpen(false)}
@@ -180,7 +296,9 @@ const SideNav = () => {
                 ✕
               </button>
 
-              <WalletPanel />
+              <div className="overflow-y-auto p-8 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                <WalletPanel />
+              </div>
             </div>
           </div>
         </div>

@@ -97,10 +97,10 @@ export default function PlinkoPage() {
                       {(["low", "medium", "high"] as RiskLevel[]).map((r) => (
                         <button
                           key={r}
-                          onClick={() => setRisk(r)}
-                          disabled={activeBalls.length > 0}
+                          onClick={() => r !== "high" && setRisk(r)}
+                          disabled={activeBalls.length > 0 || r === "high"}
                           className={`relative py-3 rounded-xl font-bold transition-all duration-300 transform ${
-                            activeBalls.length > 0
+                            activeBalls.length > 0 || r === "high"
                               ? "opacity-50 cursor-not-allowed"
                               : "hover:scale-105"
                           } ${
@@ -196,7 +196,7 @@ export default function PlinkoPage() {
             <ol className="space-y-3 text-gray-700 dark:text-gray-300">
               {[
                 'Set your bet amount',
-                'Select a risk level (low, medium, or high)',
+                'Select a risk level (low or medium)',
                 'Choose the number of rows (8 or 16)',
                 'Click the "Drop" button to release a ball',
                 'Watch the ball bounce down the pyramid',
@@ -221,7 +221,7 @@ export default function PlinkoPage() {
             </h2>
             <div className="space-y-4">
               {[
-                { icon: '⚙️', title: 'Adjustable Risk', desc: 'Choose between low, medium, and high risk for different payout structures' },
+                { icon: '⚙️', title: 'Adjustable Risk', desc: 'Choose between low and medium risk for different payout structures' },
                 { icon: '🧱', title: 'Variable Rows', desc: 'Play with 8 or 16 rows to change the game\'s complexity' },
                 { icon: '⚡', title: 'Instant Play', desc: 'No waiting, just click and drop' }
               ].map((feature, i) => (

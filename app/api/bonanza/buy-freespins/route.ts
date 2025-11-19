@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { playSpin } from "@/lib/sweet-bonanza";
-import { isRateLimited } from "@/lib/rate-limiter";
+import { isRateLimitedByMode } from "@/lib/rate-limiter";
 import { getCurrentUser } from "@/lib/auth-middleware";
 import { subtractFromBalance, addToBalance, getUserBalance, updateGameState } from "@/lib/auth";
 
-const MAX_BET = parseInt(process.env.MAX_BET_SATS || "1000");
+const MAX_BET = parseInt(process.env.MAX_BET_SATS || "500");
 const MIN_BET = parseInt(process.env.MIN_BET_SATS || "1");
 
 /**
@@ -24,14 +24,19 @@ export async function POST(req: NextRequest) {
 
     const walletMode = user.wallet_mode;
 
-    // Rate limiting
+    // Rate limiting with different limits for demo vs real play
     const ip = req.headers.get("x-forwarded-for") ||
                 req.headers.get("x-real-ip") ||
                 "unknown";
 
-    if (isRateLimited(ip, 120, 60 * 1000)) {
+    if (isRateLimitedByMode(ip, walletMode, user.account_id, {
+      demoMaxRequests: 3,      // Very restrictive for demo
+      demoWindowMs: 60 * 1000,
+      realMaxRequests: 10000,  // Anti-DDoS only
+      realWindowMs: 60 * 1000,
+    })) {
       return NextResponse.json(
-        { error: "Too many requests. Please wait a moment before trying again." },
+        { error: `Too many requests. Please wait a moment before trying again. (${walletMode} mode)` },
         { status: 429 }
       );
     }
@@ -81,12 +86,14 @@ export async function POST(req: NextRequest) {
     if (spinResult.triggeredFreeSpins) {
       const freeSpinsAwarded = spinResult.freeSpinsAwarded;
 
+      // SECURITY: Store the bet amount to lock it for free spins
       updateGameState(user.id, 'bonanza', walletMode, {
         freeSpinsRemaining: freeSpinsAwarded,
+        currentMultiplier: betAmount, // Store bet amount for security
         freeSpinsTotalWin: 0
       });
 
-      console.log(`[Bonanza ${walletMode.toUpperCase()}] User ${user.id} triggered ${freeSpinsAwarded} free spins from purchase`);
+      console.log(`[Bonanza ${walletMode.toUpperCase()}] User ${user.id} triggered ${freeSpinsAwarded} free spins from purchase with locked bet: ${betAmount} sats`);
     }
 
     // If there was a win on the purchase spin, add it to balance

@@ -88,7 +88,7 @@ export default function BlackjackSolo() {
 
   const addChipToBet = (value: number, event?: React.MouseEvent<HTMLButtonElement>) => {
     if ((betAmount + value) > (user?.balance || 0)) return;
-    if ((betAmount + value) > 5000) return;
+    if ((betAmount + value) > 2500) return;
 
     const newChip = {
       id: Date.now(),
@@ -719,7 +719,7 @@ export default function BlackjackSolo() {
           <div className="w-full md:w-64 lg:w-72 md:flex-shrink-0 space-y-4">
             {/* Balance Display */}
             <div className="bg-gradient-to-br from-gray-900 to-black px-4 py-3 rounded-xl border-2 border-yellow-600 shadow-2xl text-center">
-              <div className="text-yellow-400 font-bold text-xs mb-1">BALANCE {user?.walletMode === "demo" && <span className="text-purple-300">(Demo)</span>}</div>
+              <div className="text-yellow-400 font-bold text-xs mb-1">BALANCE {user?.walletMode === "demo" && <span className="text-purple-300">(DEMO)</span>}</div>
               <div className="text-white font-black text-2xl">{user?.balance || 0}</div>
               <div className="text-yellow-400 font-bold text-xs">sat</div>
             </div>
@@ -742,7 +742,7 @@ export default function BlackjackSolo() {
                     <button
                       key={value}
                       onClick={(e) => addChipToBet(value, e)}
-                      disabled={gameState !== "betting" || betAmount + value > (user?.balance || 0) || betAmount + value > 5000}
+                      disabled={gameState !== "betting" || betAmount + value > (user?.balance || 0) || betAmount + value > 2500}
                       className={`chip-button relative w-14 h-14 mx-auto rounded-full bg-gradient-to-br ${getChipColor(value)} border-4 border-white shadow-xl transform hover:scale-110 transition active:scale-95 disabled:opacity-30 disabled:grayscale disabled:transform-none overflow-hidden`}
                       data-chip-value={value}
                     >

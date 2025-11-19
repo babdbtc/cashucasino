@@ -52,47 +52,49 @@ export interface SpinResult {
 }
 
 // Symbol weights for regular spins (higher = more common)
-// Flatter distribution - reduced clustering while maintaining playability
+// Steeper distribution with dominant low symbols for cluster formation + boosted high symbols
 const SYMBOL_WEIGHTS: Record<Exclude<Symbol, "💣">, number> = {
-  "🍌": 26,   // Banana - most common, lowest payout
-  "🫐": 23,   // Grapes - common
-  "🍉": 20,   // Watermelon - common
-  "🍇": 18,   // Plum - medium
-  "🍎": 15,   // Apple - medium
-  "💙": 13,   // Blue Candy - rare
-  "💚": 10,   // Green Candy - rare
-  "💜": 8,    // Purple Candy - very rare
-  "🍬": 6,    // Red Heart Candy - extremely rare, highest payout
-  "🍭": 2,    // Scatter - rare, triggers free spins
+  "🍌": 38,   // Banana - very common for cluster formation
+  "🫐": 34,   // Grapes - very common for cluster formation
+  "🍉": 30,   // Watermelon - common
+  "🍇": 22,   // Plum - medium
+  "🍎": 18,   // Apple - medium
+  "💙": 15,   // Blue Candy - medium-high (boosted from original 13)
+  "💚": 12,   // Green Candy - rare (boosted from original 10)
+  "💜": 10,   // Purple Candy - very rare (boosted from original 8)
+  "🍬": 8,    // Red Heart Candy - extremely rare (boosted from original 6)
+  "🍭": 3.5,  // Scatter - rare, triggers free spins
 };
+// Total weight: 190.5 (high weight + steep curve = frequent clusters with some high-value wins)
 
 // Symbol weights for free spins (bombs can appear)
-// Same clustering as regular spins for consistent gameplay
+// Same steep distribution for cluster formation + reduced bomb frequency
 const FREE_SPINS_SYMBOL_WEIGHTS: Record<Symbol, number> = {
-  "🍌": 26,   // Banana
-  "🫐": 23,   // Grapes
-  "🍉": 20,   // Watermelon
-  "🍇": 18,   // Plum
-  "🍎": 15,   // Apple
-  "💙": 13,   // Blue Candy
-  "💚": 10,   // Green Candy
-  "💜": 8,    // Purple Candy
-  "🍬": 6,    // Red Heart Candy
-  "🍭": 2,    // Scatter
-  "💣": 9,    // Bomb - ~4.5% per position
+  "🍌": 38,   // Banana
+  "🫐": 34,   // Grapes
+  "🍉": 30,   // Watermelon
+  "🍇": 22,   // Plum
+  "🍎": 18,   // Apple
+  "💙": 15,   // Blue Candy
+  "💚": 12,   // Green Candy
+  "💜": 10,   // Purple Candy
+  "🍬": 8,    // Red Heart Candy
+  "🍭": 3.5,  // Scatter
+  "💣": 7,    // Bomb - ~3.5% per position
 };
+// Total weight: 197.5 (high weight + steep curve = frequent clusters)
 
-// Payouts at original values - clustering reduction provides RTP balance
+// Payouts - slightly increased for more rewarding cluster wins
 const BASE_PAYOUTS: Record<Exclude<Symbol, "🍭" | "💣">, { symbols8: number; symbols10: number; symbols12: number }> = {
-  "🍬": { symbols8: 10,  symbols10: 25,   symbols12: 50 },    // Red Heart Candy
-  "💜": { symbols8: 2.5, symbols10: 10,   symbols12: 25 },    // Purple Candy
-  "💚": { symbols8: 2,   symbols10: 5,    symbols12: 15 },    // Green Candy
-  "💙": { symbols8: 1.5, symbols10: 2,    symbols12: 12 },    // Blue Candy
-  "🍎": { symbols8: 1,   symbols10: 1.5,  symbols12: 10 },    // Red Apple
-  "🍇": { symbols8: 0.8, symbols10: 1.2,  symbols12: 8 },     // Purple Plum
-  "🍉": { symbols8: 0.5, symbols10: 1,    symbols12: 5 },     // Green Watermelon
-  "🫐": { symbols8: 0.4, symbols10: 0.9,  symbols12: 4 },     // Purple Grapes
-  "🍌": { symbols8: 0.25, symbols10: 0.75, symbols12: 2 },    // Yellow Banana
+  "🍬": { symbols8: 12,  symbols10: 30,   symbols12: 60 },    // Red Heart Candy (+20%)
+  "💜": { symbols8: 3,   symbols10: 12,   symbols12: 30 },    // Purple Candy (+20%)
+  "💚": { symbols8: 2.4, symbols10: 6,    symbols12: 18 },    // Green Candy (+20%)
+  "💙": { symbols8: 1.8, symbols10: 2.5,  symbols12: 14 },    // Blue Candy (+20%)
+  "🍎": { symbols8: 1.2, symbols10: 1.8,  symbols12: 12 },    // Red Apple (+20%)
+  "🍇": { symbols8: 1,   symbols10: 1.5,  symbols12: 10 },    // Purple Plum (+20-25%)
+  "🍉": { symbols8: 0.6, symbols10: 1.2,  symbols12: 6 },     // Green Watermelon (+20%)
+  "🫐": { symbols8: 0.5, symbols10: 1.1,  symbols12: 5 },     // Purple Grapes (+20-25%)
+  "🍌": { symbols8: 0.3, symbols10: 0.9,  symbols12: 2.5 },   // Yellow Banana (+20-25%)
 };
 
 // Scatter payouts (4, 5, 6+ scatters)
@@ -105,20 +107,20 @@ const SCATTER_PAYOUTS: Record<number, number> = {
 // Bomb multiplier values (official values from Pragmatic Play)
 const BOMB_MULTIPLIER_VALUES = [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80, 100];
 
-// Bomb multiplier distribution - balanced across all ranges for rewarding free spins
-// ~40% low (2x-6x), ~35% mid (8x-15x), ~15% high (20x-30x), ~10% very high (40x+)
+// Bomb multiplier distribution - low multipliers more common, very high multipliers rare
+// ~45% low (2x-6x), ~33% mid (8x-15x), ~15% high (20x-30x), ~7% very high (40x+)
 const BOMB_WEIGHTS = [
-  40, 35, 32, 30, 28,  // 2x-6x (common - 40% combined)
-  35, 32, 28, 25,      // 8x-15x (common - 35% combined)
+  45, 40, 36, 34, 32,  // 2x-6x (very common - 45% combined, increased)
+  35, 32, 28, 25,      // 8x-15x (common - 33% combined)
   18, 14, 10,          // 20x-30x (uncommon - 15% combined)
-  8, 6,                // 40x-50x (rare - 5%)
-  4, 3, 3              // 60x-100x (very rare - 5%)
+  5, 4,                // 40x-50x (rare - 4%)
+  2, 1, 1              // 60x-100x (very rare - 3%)
 ];
 
 const ROWS = 5;
 const COLS = 6;
 const MIN_CLUSTER_SIZE = 8; // Official Sweet Bonanza requires 8+ symbols
-const MAX_BET = 1000;
+const MAX_BET = 500;
 const MIN_BET = 1;
 const FREE_SPINS_TRIGGER = 4; // 4+ scatters trigger free spins
 const FREE_SPINS_AWARDED = 10; // 10 free spins awarded
@@ -336,9 +338,36 @@ function findBombs(grid: Symbol[][], existingBombs?: BombData[]): BombData[] {
 
 /**
  * Remove winning symbols and apply gravity (tumble mechanic)
+ * Preserves bomb multipliers as they drop within their columns
  */
-function applyTumble(grid: Symbol[][], clusters: Cluster[], isFreeSpins: boolean): Symbol[][] {
+function applyTumble(
+  grid: Symbol[][],
+  clusters: Cluster[],
+  isFreeSpins: boolean,
+  existingBombs?: BombData[]
+): { grid: Symbol[][], bombMultiplierMap: Map<string, number> } {
   const newGrid: Symbol[][] = grid.map(row => [...row]);
+  const bombMultiplierMap = new Map<string, number>();
+
+  // Track existing bomb multipliers by column (bottom to top order)
+  const bombsByColumn = new Map<number, number[]>();
+  if (existingBombs && isFreeSpins) {
+    for (let col = 0; col < COLS; col++) {
+      bombsByColumn.set(col, []);
+    }
+
+    // Collect bombs from bottom to top for each column
+    for (let row = ROWS - 1; row >= 0; row--) {
+      for (let col = 0; col < COLS; col++) {
+        if (grid[row][col] === "💣") {
+          const bomb = existingBombs.find(b => b.position.row === row && b.position.col === col);
+          if (bomb) {
+            bombsByColumn.get(col)!.push(bomb.multiplier);
+          }
+        }
+      }
+    }
+  }
 
   // Mark winning positions as empty (null)
   for (const cluster of clusters) {
@@ -347,7 +376,7 @@ function applyTumble(grid: Symbol[][], clusters: Cluster[], isFreeSpins: boolean
     }
   }
 
-  // Apply gravity - symbols fall down
+  // Apply gravity - symbols fall down, preserving bomb multipliers
   for (let col = 0; col < COLS; col++) {
     // Collect non-empty symbols from bottom to top
     const column: Symbol[] = [];
@@ -357,18 +386,43 @@ function applyTumble(grid: Symbol[][], clusters: Cluster[], isFreeSpins: boolean
       }
     }
 
+    // Track bomb index for this column
+    let bombIndex = 0;
+    const columnBombMultipliers = bombsByColumn.get(col) || [];
+
     // Fill column from bottom with existing symbols
     for (let row = ROWS - 1; row >= 0; row--) {
       if (column.length > 0) {
-        newGrid[row][col] = column.shift()!;
+        const symbol = column.shift()!;
+        newGrid[row][col] = symbol;
+
+        // If this is a bomb, preserve its multiplier
+        if (symbol === "💣" && isFreeSpins) {
+          const key = `${row},${col}`;
+          if (bombIndex < columnBombMultipliers.length) {
+            // Reuse existing bomb multiplier
+            bombMultiplierMap.set(key, columnBombMultipliers[bombIndex]);
+            bombIndex++;
+          } else {
+            // New bomb that appeared during tumble - assign new multiplier
+            bombMultiplierMap.set(key, getRandomBombMultiplier());
+          }
+        }
       } else {
         // Fill empty spaces with new random symbols (bombs can appear during tumbles in free spins)
-        newGrid[row][col] = getRandomSymbol(isFreeSpins);
+        const symbol = getRandomSymbol(isFreeSpins);
+        newGrid[row][col] = symbol;
+
+        // If new symbol is a bomb, assign new multiplier
+        if (symbol === "💣" && isFreeSpins) {
+          const key = `${row},${col}`;
+          bombMultiplierMap.set(key, getRandomBombMultiplier());
+        }
       }
     }
   }
 
-  return newGrid;
+  return { grid: newGrid, bombMultiplierMap };
 }
 
 /**
@@ -390,27 +444,11 @@ export function playSpin(betAmount: number, isFreeSpins = false, buyingFreeSpins
   // Find bombs in initial grid (free spins only)
   const initialBombs = isFreeSpins ? findBombs(initialGrid) : [];
 
-  // Count scatters on initial grid and calculate scatter payout
-  const scatterCount = countScatters(grid);
-  const scatterPayout = calculateScatterPayout(scatterCount);
+  // Track scatters across ALL grids (initial + tumbles) to properly trigger free spins
+  let totalScatterCount = countScatters(grid); // Start with initial grid scatters
+  const scatterPayout = calculateScatterPayout(totalScatterCount);
   const scatterPayoutAmount = Math.floor(betAmount * scatterPayout);
 
-  // Check free spins trigger/retrigger
-  let triggeredFreeSpins = false;
-  let freeSpinsAwarded = 0;
-
-  if (!isFreeSpins && scatterCount >= FREE_SPINS_TRIGGER) {
-    // Base game: 4+ scatters trigger free spins
-    triggeredFreeSpins = true;
-    freeSpinsAwarded = FREE_SPINS_AWARDED;
-  } else if (isFreeSpins && scatterCount >= FREE_SPINS_RETRIGGER) {
-    // Free spins: 3+ scatters retrigger (+5 spins)
-    triggeredFreeSpins = true;
-    freeSpinsAwarded = FREE_SPINS_RETRIGGER_AMOUNT;
-  }
-
-  // Collect all bombs across all tumbles (Sweet Bonanza: bombs stay visible throughout tumbles)
-  const allBombs: BombData[] = [];
   // Track all bombs we've seen to maintain consistent multipliers
   const seenBombs: BombData[] = [...initialBombs];
 
@@ -428,11 +466,10 @@ export function playSpin(betAmount: number, isFreeSpins = false, buyingFreeSpins
     const tumbleWinAmount = Math.floor(betAmount * tumbleWin);
     tumbleWinTotal += tumbleWinAmount;
 
-    // During free spins, find bombs in this tumble BEFORE tumble (for accumulation)
+    // During free spins, find bombs in current grid to track for display
     const bombsBeforeTumble = isFreeSpins ? findBombs(grid, seenBombs) : [];
-    allBombs.push(...bombsBeforeTumble);
 
-    // Update seen bombs with any new bombs from this tumble
+    // Update seen bombs with any new bombs from this tumble (to maintain consistent multipliers)
     for (const bomb of bombsBeforeTumble) {
       const key = `${bomb.position.row},${bomb.position.col}`;
       const alreadySeen = seenBombs.some(b => `${b.position.row},${b.position.col}` === key);
@@ -442,10 +479,31 @@ export function playSpin(betAmount: number, isFreeSpins = false, buyingFreeSpins
     }
 
     // Apply tumble (remove winning symbols and drop new ones)
-    grid = applyTumble(grid, clusters, isFreeSpins);
+    // Pass existing bombs to preserve their multipliers as they drop
+    const tumbleResult = applyTumble(grid, clusters, isFreeSpins, bombsBeforeTumble);
+    grid = tumbleResult.grid;
 
-    // Find bombs AFTER tumble for correct display positions (maintain multipliers from seenBombs)
-    const bombsAfterTumble = isFreeSpins ? findBombs(grid, seenBombs) : [];
+    // Count scatters that appear in the new grid after tumble
+    const scattersInNewGrid = countScatters(grid);
+    totalScatterCount = Math.max(totalScatterCount, scattersInNewGrid); // Track highest scatter count seen
+
+    // Find bombs AFTER tumble with preserved multipliers from tumbleResult
+    const bombsAfterTumble: BombData[] = [];
+    if (isFreeSpins) {
+      for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLS; col++) {
+          if (grid[row][col] === "💣") {
+            const key = `${row},${col}`;
+            const multiplier = tumbleResult.bombMultiplierMap.get(key) || getRandomBombMultiplier();
+            bombsAfterTumble.push({ position: { row, col }, multiplier });
+          }
+        }
+      }
+    }
+
+    // Update seenBombs with the new positions and multipliers
+    seenBombs.length = 0;
+    seenBombs.push(...bombsAfterTumble);
 
     // Save this tumble's state (AFTER tumble with new symbols and updated bomb positions)
     tumbles.push({
@@ -461,13 +519,27 @@ export function playSpin(betAmount: number, isFreeSpins = false, buyingFreeSpins
   // Find bombs in final grid (after all tumbles) - pass seenBombs to maintain consistent multipliers
   const finalBombs = isFreeSpins ? findBombs(grid, seenBombs) : [];
 
+  // Check free spins trigger/retrigger AFTER all tumbles (using total scatter count)
+  let triggeredFreeSpins = false;
+  let freeSpinsAwarded = 0;
+
+  if (!isFreeSpins && totalScatterCount >= FREE_SPINS_TRIGGER) {
+    // Base game: 4+ scatters (across all tumbles) trigger free spins
+    triggeredFreeSpins = true;
+    freeSpinsAwarded = FREE_SPINS_AWARDED;
+  } else if (isFreeSpins && totalScatterCount >= FREE_SPINS_RETRIGGER) {
+    // Free spins: 3+ scatters (across all tumbles) retrigger (+5 spins)
+    triggeredFreeSpins = true;
+    freeSpinsAwarded = FREE_SPINS_RETRIGGER_AMOUNT;
+  }
+
   // Calculate final total win
   let totalWin = tumbleWinTotal + scatterPayoutAmount;
   let bombMultiplierTotal: number | undefined;
 
-  // Apply bomb multipliers at the END (official Sweet Bonanza logic)
-  if (isFreeSpins && allBombs.length > 0 && tumbleWinTotal > 0) {
-    bombMultiplierTotal = allBombs.reduce((sum, bomb) => sum + bomb.multiplier, 0);
+  // Apply bomb multipliers at the END using ONLY bombs on final grid (official Sweet Bonanza logic)
+  if (isFreeSpins && finalBombs.length > 0 && tumbleWinTotal > 0) {
+    bombMultiplierTotal = finalBombs.reduce((sum, bomb) => sum + bomb.multiplier, 0);
     totalWin = Math.floor(tumbleWinTotal * bombMultiplierTotal) + scatterPayoutAmount;
   }
 
@@ -478,7 +550,7 @@ export function playSpin(betAmount: number, isFreeSpins = false, buyingFreeSpins
     finalBombs,
     totalWin,
     totalBet: betAmount,
-    scatterCount,
+    scatterCount: totalScatterCount, // Return total scatter count across all tumbles
     scatterPayout: scatterPayoutAmount,
     triggeredFreeSpins,
     freeSpinsAwarded,

@@ -18,6 +18,7 @@ export interface Session {
   user_id: number;
   created_at: number;
   expires_at: number;
+  wallet_mode: WalletMode;
 }
 
 /**
@@ -57,18 +58,18 @@ export function createUser(): string {
 
   const now = Date.now();
 
-  // Create user in both demo and real databases with default mode as demo
+  // Create user in both demo and real databases with default mode as real
   const demoDb = getDatabase("demo");
   const realDb = getDatabase("real");
 
   demoDb.prepare(`
     INSERT INTO users (account_id, balance, wallet_mode, created_at)
-    VALUES (?, 0, 'demo', ?)
+    VALUES (?, 0, 'real', ?)
   `).run(normalized, now);
 
   realDb.prepare(`
     INSERT INTO users (account_id, balance, wallet_mode, created_at)
-    VALUES (?, 0, 'demo', ?)
+    VALUES (?, 0, 'real', ?)
   `).run(normalized, now);
 
   console.log(`[Auth] Created new user with ID: ${accountId}`);
@@ -107,10 +108,24 @@ export function getUserByAccountId(accountId: string): User | null {
 
 /**
  * Get user by internal ID
- * Gets user from demo database first to determine wallet_mode, then returns user from active database
+ * If mode is provided, queries that database directly (more efficient when mode is known from session)
+ * Otherwise, gets user from demo database first to determine wallet_mode, then returns user from active database
  * Uses account_id to find user across databases since IDs may differ
  */
-export function getUserById(id: number): User | null {
+export function getUserById(id: number, mode?: WalletMode): User | null {
+  // If mode is provided, query that database directly
+  if (mode) {
+    const activeDb = getDatabase(mode);
+    const user = activeDb.prepare(`
+      SELECT id, account_id, nostr_pubkey, balance, wallet_mode, created_at, last_login
+      FROM users
+      WHERE id = ?
+    `).get(id) as User | undefined;
+
+    return user || null;
+  }
+
+  // Otherwise, use the existing two-step lookup process
   // First get from demo database to determine wallet_mode and account_id
   const demoDb = getDatabase("demo");
   const demoUser = demoDb.prepare(`
@@ -207,9 +222,9 @@ export function createSession(userId: number, mode: WalletMode = "demo"): string
 
   const activeDb = getDatabase(mode);
   activeDb.prepare(`
-    INSERT INTO sessions (id, user_id, created_at, expires_at)
-    VALUES (?, ?, ?, ?)
-  `).run(sessionId, userId, now, expiresAt);
+    INSERT INTO sessions (id, user_id, created_at, expires_at, wallet_mode)
+    VALUES (?, ?, ?, ?, ?)
+  `).run(sessionId, userId, now, expiresAt, mode);
 
   return sessionId;
 }
@@ -221,7 +236,7 @@ export function createSession(userId: number, mode: WalletMode = "demo"): string
 export function getSession(sessionId: string): Session | null {
   // Try demo database first
   let session = getDatabase("demo").prepare(`
-    SELECT id, user_id, created_at, expires_at
+    SELECT id, user_id, created_at, expires_at, wallet_mode
     FROM sessions
     WHERE id = ?
   `).get(sessionId) as Session | undefined;
@@ -229,7 +244,7 @@ export function getSession(sessionId: string): Session | null {
   // If not in demo, try real
   if (!session) {
     session = getDatabase("real").prepare(`
-      SELECT id, user_id, created_at, expires_at
+      SELECT id, user_id, created_at, expires_at, wallet_mode
       FROM sessions
       WHERE id = ?
     `).get(sessionId) as Session | undefined;
@@ -370,7 +385,8 @@ export function subtractFromBalance(
   amount: number,
   type: "bet" | "withdraw",
   mode: WalletMode,
-  metadata?: string
+  metadata?: string,
+  cashuToken?: string
 ): number | null {
   const activeDb = getDatabase(mode);
 
@@ -378,7 +394,8 @@ export function subtractFromBalance(
     userId: number,
     amount: number,
     type: string,
-    metadata?: string
+    metadata?: string,
+    cashuToken?: string
   ): number | null => {
     // Get current balance within transaction
     const result = activeDb.prepare(`
@@ -405,16 +422,16 @@ export function subtractFromBalance(
 
     // Record transaction
     activeDb.prepare(`
-      INSERT INTO transactions (user_id, type, amount, balance_after, metadata, created_at)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(userId, type, -amount, newBalance, metadata || null, Date.now());
+      INSERT INTO transactions (user_id, type, amount, balance_after, metadata, cashu_token, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(userId, type, -amount, newBalance, metadata || null, cashuToken || null, Date.now());
 
     console.log(`[Auth ${mode.toUpperCase()}] User ${userId}: ${type} -${amount} sats, new balance: ${newBalance}`);
 
     return newBalance;
   });
 
-  return subtractTransaction(userId, amount, type, metadata);
+  return subtractTransaction(userId, amount, type, metadata, cashuToken);
 }
 
 /**
@@ -426,16 +443,64 @@ export function getUserTransactions(userId: number, mode: WalletMode, limit: num
   amount: number;
   balance_after: number;
   metadata: string | null;
+  cashu_token: string | null;
   created_at: number;
 }> {
   const activeDb = getDatabase(mode);
   return activeDb.prepare(`
-    SELECT id, type, amount, balance_after, metadata, created_at
+    SELECT id, type, amount, balance_after, metadata, cashu_token, created_at
     FROM transactions
     WHERE user_id = ?
     ORDER BY created_at DESC
     LIMIT ?
   `).all(userId, limit) as any[];
+}
+
+/**
+ * Get user's withdrawal history (only transactions with Cashu tokens)
+ */
+export function getUserWithdrawalHistory(userId: number, mode: WalletMode, limit: number = 50): Array<{
+  id: number;
+  amount: number;
+  cashu_token: string;
+  created_at: number;
+  metadata: string | null;
+}> {
+  const activeDb = getDatabase(mode);
+  return activeDb.prepare(`
+    SELECT id, amount, cashu_token, metadata, created_at
+    FROM transactions
+    WHERE user_id = ? AND type = 'withdraw' AND cashu_token IS NOT NULL
+    ORDER BY created_at DESC
+    LIMIT ?
+  `).all(userId, limit) as any[];
+}
+
+/**
+ * Update the most recent withdrawal transaction with the Cashu token
+ * This is called after token creation succeeds to save the token for future reference
+ */
+export function updateWithdrawalToken(userId: number, mode: WalletMode, token: string): boolean {
+  const activeDb = getDatabase(mode);
+
+  try {
+    // Update the most recent withdrawal transaction for this user
+    const result = activeDb.prepare(`
+      UPDATE transactions
+      SET cashu_token = ?
+      WHERE id = (
+        SELECT id FROM transactions
+        WHERE user_id = ? AND type = 'withdraw'
+        ORDER BY created_at DESC
+        LIMIT 1
+      )
+    `).run(token, userId);
+
+    return result.changes > 0;
+  } catch (error) {
+    console.error("[Auth] Failed to update withdrawal token:", error);
+    return false;
+  }
 }
 
 /**
@@ -592,12 +657,12 @@ export function loginOrCreateNostrUser(nostrPubkey: string): User {
   // Create in both databases
   demoDb.prepare(`
     INSERT INTO users (account_id, nostr_pubkey, balance, wallet_mode, created_at, last_login)
-    VALUES (?, ?, 10000, 'demo', ?, ?)
+    VALUES (?, ?, 10000, 'real', ?, ?)
   `).run(normalized, nostrPubkey, now, now);
 
   realDb.prepare(`
     INSERT INTO users (account_id, nostr_pubkey, balance, wallet_mode, created_at, last_login)
-    VALUES (?, ?, 0, 'demo', ?, ?)
+    VALUES (?, ?, 0, 'real', ?, ?)
   `).run(normalized, nostrPubkey, now, now);
 
   console.log("[Auth] New Nostr user created:", nostrPubkey.substring(0, 8) + "...");

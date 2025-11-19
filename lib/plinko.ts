@@ -11,7 +11,7 @@ export interface PlinkoResult {
 // 16 rows (3 pegs at top, 18 at bottom), 17 multiplier slots
 const MULTIPLIERS: Record<RiskLevel, number[]> = {
   low: [16, 9, 2, 1.4, 1.4, 1.2, 1.1, 1, 0.5, 1, 1.1, 1.2, 1.4, 1.4, 2, 9, 16],
-  medium: [110, 41, 10, 5, 3, 1.5, 1, 0.5, 0.3, 0.5, 1, 1.5, 3, 5, 10, 41, 110],
+  medium: [100, 40, 10, 5, 3, 1.5, 1, 0.5, 0.3, 0.5, 1, 1.5, 3, 5, 10, 40, 100],
   high: [1000, 130, 26, 9, 4, 2, 0.2, 0.2, 0.2, 0.2, 0.2, 2, 4, 9, 26, 130, 1000],
 };
 
