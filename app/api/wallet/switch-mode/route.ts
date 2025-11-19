@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { switchWalletMode, type WalletMode } from "@/lib/auth";
-import { getCurrentUser } from "@/lib/auth-middleware";
+import { switchWalletMode, updateSessionWalletMode, type WalletMode } from "@/lib/auth";
+import { getCurrentUser, SESSION_COOKIE_NAME } from "@/lib/auth-middleware";
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,6 +40,13 @@ export async function POST(request: NextRequest) {
         { error: "User not found" },
         { status: 404 }
       );
+    }
+
+    // Update the session's wallet_mode to match the new mode
+    // This ensures that on page reload, the correct balance is fetched
+    const sessionId = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+    if (sessionId) {
+      updateSessionWalletMode(sessionId, mode as WalletMode);
     }
 
     return NextResponse.json({
