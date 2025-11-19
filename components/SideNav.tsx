@@ -84,22 +84,33 @@ const SideNav = () => {
         <div className="absolute inset-0 glass border-r-2 border-neon-purple/30" />
 
         {/* Animated gradient border glow */}
-        <div className="absolute inset-0 bg-gradient-to-b from-neon-pink/20 via-neon-purple/20 to-neon-blue/20 opacity-50 animate-pulse-slow" />
+        <div className="absolute inset-0 bg-gradient-to-b from-neon-pink/20 via-neon-purple/20 to-neon-blue/20 opacity-50" />
 
         {/* Content */}
         <div className="relative flex flex-col h-full p-6 text-foreground">
           {/* Logo Section */}
           <div className="mb-8 text-center group">
-            <div className="w-16 h-16 mx-auto mb-3 animate-float relative">
-              <Image src="/icon.png" alt="Cashu Casino" width={64} height={64} className="rounded-lg" />
+            <div className="mx-auto mb-3 relative flex justify-center h-16 w-[180px]">
+              {/* Animated gradient background */}
+              <div className="absolute inset-0 bg-gradient-to-r from-neon-pink via-neon-purple to-neon-blue animate-gradient bg-[length:200%_auto]"
+                   style={{
+                     WebkitMaskImage: 'url(/images/Cashucasino-logo.png)',
+                     WebkitMaskSize: 'contain',
+                     WebkitMaskRepeat: 'no-repeat',
+                     WebkitMaskPosition: 'center',
+                     maskImage: 'url(/images/Cashucasino-logo.png)',
+                     maskSize: 'contain',
+                     maskRepeat: 'no-repeat',
+                     maskPosition: 'center'
+                   }}
+              />
             </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-neon-pink via-neon-purple to-neon-blue bg-clip-text text-transparent animate-gradient bg-[length:200%_auto]">
-              cashucasino
-              <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-neon-yellow/20 border border-neon-yellow text-neon-yellow font-semibold align-middle">BETA</span>
-            </h1>
-            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-              #NutNovember
-            </p>
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-neon-yellow/20 border border-neon-yellow text-neon-yellow font-semibold">BETA</span>
+              <p className="text-sm text-gray-400 dark:text-gray-500">
+                #NutNovember
+              </p>
+            </div>
           </div>
 
           {/* Theme Toggle */}
