@@ -68,33 +68,33 @@ export default function BlackjackPage() {
 
             {/* Multiplayer */}
             <button
-              onClick={() => setMode("multi")}
-              className="group relative overflow-hidden bg-gradient-to-br from-purple-600 to-purple-800 hover:from-purple-500 hover:to-purple-700 rounded-3xl p-8 border-4 border-yellow-600 shadow-2xl transform hover:scale-105 transition-all duration-300 opacity-75"
+              disabled
+              className="group relative overflow-hidden bg-gradient-to-br from-gray-600 to-gray-800 rounded-3xl p-8 border-4 border-gray-600 shadow-2xl opacity-50 cursor-not-allowed"
             >
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
               <div className="relative z-10 space-y-4">
-                <div className="text-7xl mb-4">👥</div>
-                <h2 className="text-4xl font-black text-white mb-2">MULTIPLAYER</h2>
-                <p className="text-yellow-200 text-lg mb-4">Play with others at the table</p>
-                <ul className="text-white text-left space-y-2 mb-6">
+                <div className="text-7xl mb-4 grayscale">👥</div>
+                <h2 className="text-4xl font-black text-gray-400 mb-2">MULTIPLAYER</h2>
+                <p className="text-gray-500 text-lg mb-4">Play with others at the table</p>
+                <ul className="text-gray-400 text-left space-y-2 mb-6">
                   <li className="flex items-center gap-2">
-                    <span className="text-purple-400">✓</span> Up to 5 players per table
+                    <span className="text-gray-500">✓</span> Up to 5 players per table
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="text-purple-400">✓</span> Real-time gameplay
+                    <span className="text-gray-500">✓</span> Real-time gameplay
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="text-purple-400">✓</span> Shared table experience
+                    <span className="text-gray-500">✓</span> Shared table experience
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="text-purple-400">✓</span> Turn-based actions
+                    <span className="text-gray-500">✓</span> Turn-based actions
                   </li>
                 </ul>
-                <div className="bg-yellow-500 text-black px-6 py-3 rounded-full font-bold text-xl inline-block group-hover:bg-yellow-400 transition">
-                  JOIN TABLE →
+                <div className="bg-gray-500 text-gray-700 px-6 py-3 rounded-full font-bold text-xl inline-block">
+                  COMING SOON
                 </div>
-                <div className="absolute top-4 right-4 bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-bold">
-                  BETA
+                <div className="absolute top-4 right-4 bg-gray-600 text-gray-400 px-3 py-1 rounded-full text-sm font-bold">
+                  DISABLED
                 </div>
               </div>
             </button>

@@ -21,9 +21,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem('theme') as Theme | null;
     if (stored) {
       setThemeState(stored);
-    } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
-      setThemeState('light');
     }
+    // Default to dark mode (no browser preference check)
   }, []);
 
   useEffect(() => {

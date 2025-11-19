@@ -4,11 +4,12 @@ import { useState, useEffect, useCallback, ReactNode } from "react";
 import Ball from "./Ball";
 import { useAuth } from "@/lib/auth-context";
 import { RiskLevel } from "@/lib/plinko";
+import RateLimitModal from "./RateLimitModal";
 
 // Multipliers by risk level - 17 slots
 const MULTIPLIERS_BY_RISK = {
   low: [16, 9, 2, 1.4, 1.4, 1.2, 1.1, 1, 0.5, 1, 1.1, 1.2, 1.4, 1.4, 2, 9, 16],
-  medium: [110, 41, 10, 5, 3, 1.5, 1, 0.5, 0.3, 0.5, 1, 1.5, 3, 5, 10, 41, 110],
+  medium: [100, 40, 10, 5, 3, 1.5, 1, 0.5, 0.3, 0.5, 1, 1.5, 3, 5, 10, 40, 100],
   high: [1000, 130, 26, 9, 4, 2, 0.2, 0.2, 0.2, 0.2, 0.2, 2, 4, 9, 26, 130, 1000],
 };
 
@@ -42,6 +43,7 @@ interface PlinkoProps {
 const Plinko: React.FC<PlinkoProps> = ({ children }) => {
   const { user, updateBalance } = useAuth();
   const balance = user?.balance || 0;
+  const walletMode = user?.walletMode || "real";
 
   // Load saved settings from localStorage
   const [betAmount, setBetAmount] = useState(() => {
@@ -55,7 +57,9 @@ const Plinko: React.FC<PlinkoProps> = ({ children }) => {
   const [risk, setRisk] = useState<RiskLevel>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('plinko_risk');
-      return (saved as RiskLevel) || "medium";
+      // Prevent "high" risk from being loaded
+      const savedRisk = saved as RiskLevel;
+      return (savedRisk === "high" ? "medium" : savedRisk) || "medium";
     }
     return "medium";
   });
@@ -63,6 +67,7 @@ const Plinko: React.FC<PlinkoProps> = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [activeBalls, setActiveBalls] = useState<ActiveBall[]>([]);
   const [highlightedSlot, setHighlightedSlot] = useState<number | null>(null);
+  const [showRateLimitModal, setShowRateLimitModal] = useState(false);
 
   // Save settings to localStorage when they change
   useEffect(() => {
@@ -100,11 +105,23 @@ const Plinko: React.FC<PlinkoProps> = ({ children }) => {
         const uniqueId = Date.now() + Math.random() * 1000000;
         setActiveBalls(prev => [...prev, { ...data, id: uniqueId, newBalance: data.newBalance }]);
       } else {
-        alert(data.error);
+        // Check if it's a demo rate limit error
+        if (data.error && data.error.includes("Too many requests") && data.error.includes("demo mode")) {
+          setShowRateLimitModal(true);
+        } else {
+          alert(data.error);
+        }
       }
     } catch (error) {
       console.error("Plinko play error:", error);
-      alert("An error occurred while playing Plinko.");
+      const errorMessage = error instanceof Error ? error.message : "An error occurred while playing Plinko.";
+
+      // Check if it's a demo rate limit error
+      if (errorMessage.includes("Too many requests") && errorMessage.includes("demo mode")) {
+        setShowRateLimitModal(true);
+      } else {
+        alert(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -281,6 +298,12 @@ const Plinko: React.FC<PlinkoProps> = ({ children }) => {
         renderPegs,
         renderMultipliers,
       })}
+
+      {/* Rate Limit Modal */}
+      <RateLimitModal
+        isOpen={showRateLimitModal}
+        onClose={() => setShowRateLimitModal(false)}
+      />
     </>
   );
 };

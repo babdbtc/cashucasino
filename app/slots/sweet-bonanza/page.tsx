@@ -53,7 +53,7 @@ export default function SweetBonanzaPage() {
             <ol className="space-y-3 text-gray-700 dark:text-gray-300">
               {[
                 'Deposit Cashu tokens to your virtual balance using the wallet',
-                'Select your bet amount (1-1000 sats) from the quick bet buttons',
+                'Select your bet amount (5-1000 sats) from the quick bet buttons',
                 'Click SPIN or use AUTOPLAY for multiple spins',
                 'Land 8+ matching symbols to form winning clusters',
                 'Winning symbols disappear and new ones tumble down',
@@ -129,7 +129,7 @@ export default function SweetBonanzaPage() {
           </h3>
           <div className="space-y-2 text-gray-700 dark:text-gray-300">
             {[
-              'RTP: ~95% (5% house edge) • Uses mint.minibits.cash',
+              'RTP: ~95.5% (4.5% house edge) • Uses mint.minibits.cash',
               'Play responsibly. Never gamble more than you can afford to lose.'
             ].map((notice, i) => (
               <div key={i} className="flex items-start gap-2">

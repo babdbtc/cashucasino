@@ -12,34 +12,9 @@ export default function AuthModal() {
   const [showAccountId, setShowAccountId] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // If user is logged in, show account info
+  // If user is logged in, don't show anything (logged in section moved to SideNav)
   if (user) {
-    const walletMode = user.walletMode || "demo";
-    return (
-      <div className="fixed top-4 right-4 bg-gray-800 p-4 rounded-lg border border-gray-700 z-50">
-        <div className="text-sm text-gray-300 mb-2">Logged in</div>
-        <div className="text-xs text-gray-400 mb-2">
-          Balance {walletMode === "demo" && <span className="text-blue-400">(Demo)</span>}: <span className="text-green-400 font-bold">{user.balance}</span> sat
-        </div>
-        <button
-          onClick={() => setShowAccountId(!showAccountId)}
-          className="text-xs text-blue-400 hover:text-blue-300 mb-2 block"
-        >
-          {showAccountId ? "Hide" : "Show"} Account ID
-        </button>
-        {showAccountId && (
-          <div className="text-xs text-gray-400 mb-2 font-mono bg-gray-900 p-2 rounded">
-            {user.accountId}
-          </div>
-        )}
-        <button
-          onClick={logout}
-          className="text-xs bg-red-600 hover:bg-red-700 px-3 py-1 rounded"
-        >
-          Logout
-        </button>
-      </div>
-    );
+    return null;
   }
 
   // Otherwise show login/register modal

@@ -5,6 +5,7 @@ import { flushSync } from "react-dom";
 import { useAuth } from "@/lib/auth-context";
 import gsap from "gsap";
 import { useSound } from "@/hooks/useSound";
+import RateLimitModal from "./RateLimitModal";
 
 type Symbol =
   | "🍬" // Red Heart Candy (highest)
@@ -101,6 +102,7 @@ export default function SweetBonanzaSlot() {
   const [extendedFreeSpins, setExtendedFreeSpins] = useState(0); // Track newly awarded free spins during free spins
   const [awardedFreeSpins, setAwardedFreeSpins] = useState(0); // Store originally awarded free spins for display
   const [buyingFreeSpins, setBuyingFreeSpins] = useState(false); // Track if user is buying free spins
+  const [showRateLimitModal, setShowRateLimitModal] = useState(false); // Show demo rate limit modal
 
   const gridRef = useRef<HTMLDivElement>(null);
   const winDisplayRef = useRef<HTMLDivElement>(null);
@@ -635,8 +637,8 @@ export default function SweetBonanzaSlot() {
       return;
     }
 
-    if (betAmount < 1 || betAmount > 1000) {
-      setError("Bet must be between 1 and 1000 sat");
+    if (betAmount < 1 || betAmount > 500) {
+      setError("Bet must be between 1 and 500 sat");
       return;
     }
 
@@ -644,6 +646,14 @@ export default function SweetBonanzaSlot() {
     setNeedsManualSpinAfterFreeSpins(false);
     setNeedsManualSpinToStartFreeSpins(false);
     setAwardedFreeSpins(0); // Clear awarded amount once user starts playing
+    setExtendedFreeSpins(0); // Clear extended free spins notification
+
+    // Immediately deduct bet from balance for non-free spins (better UX - user sees instant feedback)
+    // Free spins don't cost anything, so skip deduction
+    // Server will validate and handle actual balance changes
+    if (!isFreeSpin) {
+      updateBalance(walletBalance - betAmount);
+    }
 
     // Server will handle balance validation
     setSpinning(true);
@@ -685,13 +695,6 @@ export default function SweetBonanzaSlot() {
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to play spin");
-      }
-
-      // Update balance from server response
-      // Always update balance - the server already handles free spins accumulation correctly
-      if (data.newBalance !== undefined) {
-        updateBalance(data.newBalance);
-        console.log('[Sweet Bonanza] Balance updated to:', data.newBalance);
       }
 
       // Animate initial spin - update bombs first, then grid synchronously
@@ -803,15 +806,20 @@ export default function SweetBonanzaSlot() {
 
         // If we're already in free spins, this is an extension
         if (freeSpinsRemaining > 0) {
+          // Pause autoplay IMMEDIATELY to prevent clicking spin during the delay
+          setNeedsManualSpinToStartFreeSpins(true);
+
           // Delay showing the extension overlay so users can see the lollipops
           setTimeout(() => {
             setExtendedFreeSpins(data.freeSpinsAwarded || 0);
-            // Don't pause - just show the extension notification briefly
-            setTimeout(() => setExtendedFreeSpins(0), 3000); // Clear after 3 seconds
+            // Keep the extension notification visible (user needs to click spin to continue)
           }, 2500); // 2.5 second delay to show the lollipops
         } else {
           // Starting fresh free spins - fade out win display first, then animate lollipops
           const awarded = data.freeSpinsAwarded || 0;
+
+          // Pause autoplay IMMEDIATELY to prevent clicking spin during animations
+          setNeedsManualSpinToStartFreeSpins(true);
 
           // Use flushSync to ensure awardedFreeSpins is set immediately before showing overlay
           flushSync(() => {
@@ -833,27 +841,19 @@ export default function SweetBonanzaSlot() {
                   setCurrentSpinWin(0);
                   setTotalWinDisplay(0);
 
-                  // Then animate lollipops
-                  animateFreeSpinsLollipops().then(() => {
-                    // After animation completes, show the overlay
-                    setNeedsManualSpinToStartFreeSpins(true); // Pause autoplay - require manual spin to start free spins
-                  });
+                  // Then animate lollipops (autoplay already paused)
+                  animateFreeSpinsLollipops();
                 }
               });
             } else {
               // Fallback if element not found
               setCurrentSpinWin(0);
               setTotalWinDisplay(0);
-              animateFreeSpinsLollipops().then(() => {
-                setNeedsManualSpinToStartFreeSpins(true);
-              });
+              animateFreeSpinsLollipops();
             }
           } else {
             // No win to fade out, go straight to lollipop animation
-            animateFreeSpinsLollipops().then(() => {
-              // After animation completes, show the overlay
-              setNeedsManualSpinToStartFreeSpins(true); // Pause autoplay - require manual spin to start free spins
-            });
+            animateFreeSpinsLollipops();
           }
         }
       }
@@ -874,7 +874,12 @@ export default function SweetBonanzaSlot() {
         setFreeSpinsTotalWin(serverFreeSpinsTotalWin);
       }
 
-      // Balance already updated from API response above
+      // Update balance from server response after animations complete
+      // This ensures the user sees the win amount before the balance updates
+      if (data.newBalance !== undefined) {
+        updateBalance(data.newBalance);
+        console.log('[Sweet Bonanza] Balance updated to:', data.newBalance);
+      }
 
       // Handle autoplay
       if (isAutoplay && autoplay) {
@@ -901,6 +906,11 @@ export default function SweetBonanzaSlot() {
       setError(errorMessage);
       setSpinning(false);
 
+      // Check if it's a demo rate limit error
+      if (errorMessage.includes("Too many requests") && errorMessage.includes("demo mode")) {
+        setShowRateLimitModal(true);
+      }
+
       // Balance remains unchanged on error (bet wasn't processed)
 
       if (isAutoplay) {
@@ -918,8 +928,8 @@ export default function SweetBonanzaSlot() {
       return;
     }
 
-    if (betAmount < 1 || betAmount > 1000) {
-      setError("Bet must be between 1 and 1000 sat");
+    if (betAmount < 1 || betAmount > 500) {
+      setError("Bet must be between 1 and 500 sat");
       return;
     }
 
@@ -928,6 +938,10 @@ export default function SweetBonanzaSlot() {
       setError("Cannot buy free spins while already in free spins mode");
       return;
     }
+
+    // Immediately deduct cost from balance (better UX - user sees instant feedback)
+    // Server will validate and handle actual balance changes
+    updateBalance(walletBalance - cost);
 
     setSpinning(true);
     setError(null);
@@ -955,11 +969,6 @@ export default function SweetBonanzaSlot() {
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to buy free spins");
-      }
-
-      // Update balance from server response
-      if (data.newBalance !== undefined) {
-        updateBalance(data.newBalance);
       }
 
       // Animate initial spin - update bombs first, then grid synchronously
@@ -1105,12 +1114,23 @@ export default function SweetBonanzaSlot() {
       setFreeSpinsRemaining(data.freeSpinsRemaining || 0);
       setFreeSpinsTotalWin(data.freeSpinsTotalWin || 0);
 
+      // Update balance from server response after animations complete
+      // This ensures the user sees the win amount before the balance updates
+      if (data.newBalance !== undefined) {
+        updateBalance(data.newBalance);
+      }
+
       setSpinning(false);
 
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "An error occurred";
       setError(errorMessage);
       setSpinning(false);
+
+      // Check if it's a demo rate limit error
+      if (errorMessage.includes("Too many requests") && errorMessage.includes("demo mode")) {
+        setShowRateLimitModal(true);
+      }
     }
   };
 
@@ -1130,7 +1150,7 @@ export default function SweetBonanzaSlot() {
     }
   };
 
-  const betOptions = [1, 5, 10, 20, 50, 100, 200, 500, 1000];
+  const betOptions = [5, 10, 20, 50, 100, 200, 500];
 
   return (
     <div className="w-full max-w-7xl mx-auto">
@@ -1154,6 +1174,11 @@ export default function SweetBonanzaSlot() {
           <div className="absolute top-64 left-1/4 text-5xl opacity-30 animate-float" style={{ animationDelay: '2.5s' }}>🍰</div>
           <div className="absolute bottom-32 right-16 text-6xl opacity-40 animate-float" style={{ animationDelay: '3s' }}>🍭</div>
           <div className="absolute bottom-48 left-20 text-5xl opacity-35 animate-float" style={{ animationDelay: '3.5s' }}>🍬</div>
+        </div>
+
+        {/* RTP - Top Left */}
+        <div className="absolute top-4 left-4 z-20 text-sm font-semibold text-white/75">
+          RTP: ~95.5%
         </div>
 
         {/* Sound Button - Top Right */}
@@ -1200,7 +1225,7 @@ export default function SweetBonanzaSlot() {
             playSound('buttonClick');
             setTurboMode(!turboMode);
           }}
-          className={`absolute bottom-24 right-4 z-20 px-4 py-2 rounded-xl font-bold transition-all transform hover:scale-110 border-2 ${
+          className={`absolute bottom-28 right-5 z-20 px-4 py-2 rounded-xl font-bold transition-all transform hover:scale-110 border-2 ${
             turboMode
               ? "bg-gradient-to-b from-orange-400 to-orange-600 border-orange-300 shadow-lg"
               : "bg-gradient-to-b from-gray-600 to-gray-800 border-gray-500"
@@ -1292,7 +1317,7 @@ export default function SweetBonanzaSlot() {
         {/* Game Grid Container */}
         <div className="relative z-10 flex items-center justify-center flex-1 p-2 md:p-6 min-h-0">
           {/* Free Spins Triggered Overlay - Only covers grid area */}
-          {needsManualSpinToStartFreeSpins && (
+          {needsManualSpinToStartFreeSpins && awardedFreeSpins > 0 && (
             <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none bg-black/70 backdrop-blur-sm rounded-3xl">
               <div className="text-center relative">
                 {/* Animated background sparkles */}
@@ -1637,13 +1662,14 @@ export default function SweetBonanzaSlot() {
                     playSound('buttonClick');
                     setBetAmount(bet);
                   }}
-                  disabled={spinning || autoplay !== null}
+                  disabled={spinning || autoplay !== null || freeSpinsRemaining > 0}
                   className={`px-3 md:px-4 py-2 md:py-3 rounded-xl font-bold text-xs md:text-sm transition-all transform ${
                     betAmount === bet
                       ? "bg-gradient-to-b from-yellow-300 to-yellow-500 text-purple-900 scale-110 shadow-lg border-2 border-yellow-200"
                       : "bg-gradient-to-b from-purple-700 to-purple-900 hover:from-purple-600 hover:to-purple-800 text-white border-2 border-purple-600"
-                  } ${(spinning || autoplay !== null) ? "opacity-50 cursor-not-allowed" : "hover:scale-105"}`}
+                  } ${(spinning || autoplay !== null || freeSpinsRemaining > 0) ? "opacity-50 cursor-not-allowed" : "hover:scale-105"}`}
                   style={betAmount === bet ? { boxShadow: '0 0 20px rgba(251, 191, 36, 0.8)' } : {}}
+                  title={freeSpinsRemaining > 0 ? "Bet amount is locked during free spins" : ""}
                 >
                   {bet}
                 </button>
@@ -1785,81 +1811,81 @@ export default function SweetBonanzaSlot() {
           <div className="bg-gradient-to-br from-pink-800 to-purple-900 p-3 rounded-2xl border-2 border-yellow-400/60 hover:border-yellow-400 transition-all transform hover:scale-105 shadow-lg"
                style={{ background: getSymbolBackground("🍬") }}>
             <div className="text-3xl mb-1 drop-shadow-lg">🍬</div>
-            <div className="text-xs text-white font-black">8-9: 10x</div>
-            <div className="text-xs text-white font-black">10-11: 25x</div>
-            <div className="text-xs text-white font-black">12+: 50x</div>
+            <div className="text-xs text-white font-black">8-9: 12x</div>
+            <div className="text-xs text-white font-black">10-11: 30x</div>
+            <div className="text-xs text-white font-black">12+: 60x</div>
           </div>
 
           {/* Purple Candy */}
           <div className="bg-gradient-to-br from-pink-800 to-purple-900 p-3 rounded-2xl border-2 border-yellow-400/40 hover:border-yellow-400 transition-all transform hover:scale-105 shadow-lg"
                style={{ background: getSymbolBackground("💜") }}>
             <div className="text-3xl mb-1 drop-shadow-lg">💜</div>
-            <div className="text-xs text-white font-bold">8-9: 2.5x</div>
-            <div className="text-xs text-white font-bold">10-11: 10x</div>
-            <div className="text-xs text-white font-bold">12+: 25x</div>
+            <div className="text-xs text-white font-bold">8-9: 3x</div>
+            <div className="text-xs text-white font-bold">10-11: 12x</div>
+            <div className="text-xs text-white font-bold">12+: 30x</div>
           </div>
 
           {/* Green Candy */}
           <div className="bg-gradient-to-br from-pink-800 to-purple-900 p-3 rounded-2xl border-2 border-yellow-400/40 hover:border-yellow-400 transition-all transform hover:scale-105 shadow-lg"
                style={{ background: getSymbolBackground("💚") }}>
             <div className="text-3xl mb-1 drop-shadow-lg">💚</div>
-            <div className="text-xs text-white font-bold">8-9: 2x</div>
-            <div className="text-xs text-white font-bold">10-11: 5x</div>
-            <div className="text-xs text-white font-bold">12+: 15x</div>
+            <div className="text-xs text-white font-bold">8-9: 2.4x</div>
+            <div className="text-xs text-white font-bold">10-11: 6x</div>
+            <div className="text-xs text-white font-bold">12+: 18x</div>
           </div>
 
           {/* Blue Candy */}
           <div className="bg-gradient-to-br from-pink-800 to-purple-900 p-3 rounded-2xl border-2 border-yellow-400/40 hover:border-yellow-400 transition-all transform hover:scale-105 shadow-lg"
                style={{ background: getSymbolBackground("💙") }}>
             <div className="text-3xl mb-1 drop-shadow-lg">💙</div>
-            <div className="text-xs text-white font-bold">8-9: 1.5x</div>
-            <div className="text-xs text-white font-bold">10-11: 2x</div>
-            <div className="text-xs text-white font-bold">12+: 12x</div>
+            <div className="text-xs text-white font-bold">8-9: 1.8x</div>
+            <div className="text-xs text-white font-bold">10-11: 2.5x</div>
+            <div className="text-xs text-white font-bold">12+: 14x</div>
           </div>
 
           {/* Red Apple */}
           <div className="bg-gradient-to-br from-pink-800 to-purple-900 p-3 rounded-2xl border-2 border-yellow-400/40 hover:border-yellow-400 transition-all transform hover:scale-105 shadow-lg"
                style={{ background: getSymbolBackground("🍎") }}>
             <div className="text-3xl mb-1 drop-shadow-lg">🍎</div>
-            <div className="text-xs text-white font-bold">8-9: 1x</div>
-            <div className="text-xs text-white font-bold">10-11: 1.5x</div>
-            <div className="text-xs text-white font-bold">12+: 10x</div>
+            <div className="text-xs text-white font-bold">8-9: 1.2x</div>
+            <div className="text-xs text-white font-bold">10-11: 1.8x</div>
+            <div className="text-xs text-white font-bold">12+: 12x</div>
           </div>
 
           {/* Purple Plum */}
           <div className="bg-gradient-to-br from-pink-800 to-purple-900 p-3 rounded-2xl border-2 border-yellow-400/40 hover:border-yellow-400 transition-all transform hover:scale-105 shadow-lg"
                style={{ background: getSymbolBackground("🍇") }}>
             <div className="text-3xl mb-1 drop-shadow-lg">🍇</div>
-            <div className="text-xs text-white font-bold">8-9: 0.8x</div>
-            <div className="text-xs text-white font-bold">10-11: 1.2x</div>
-            <div className="text-xs text-white font-bold">12+: 8x</div>
+            <div className="text-xs text-white font-bold">8-9: 1x</div>
+            <div className="text-xs text-white font-bold">10-11: 1.5x</div>
+            <div className="text-xs text-white font-bold">12+: 10x</div>
           </div>
 
           {/* Green Watermelon */}
           <div className="bg-gradient-to-br from-pink-800 to-purple-900 p-3 rounded-2xl border-2 border-yellow-400/40 hover:border-yellow-400 transition-all transform hover:scale-105 shadow-lg"
                style={{ background: getSymbolBackground("🍉") }}>
             <div className="text-3xl mb-1 drop-shadow-lg">🍉</div>
-            <div className="text-xs text-purple-900 font-bold">8-9: 0.5x</div>
-            <div className="text-xs text-purple-900 font-bold">10-11: 1x</div>
-            <div className="text-xs text-purple-900 font-bold">12+: 5x</div>
+            <div className="text-xs text-purple-900 font-bold">8-9: 0.6x</div>
+            <div className="text-xs text-purple-900 font-bold">10-11: 1.2x</div>
+            <div className="text-xs text-purple-900 font-bold">12+: 6x</div>
           </div>
 
           {/* Purple Grapes */}
           <div className="bg-gradient-to-br from-pink-800 to-purple-900 p-3 rounded-2xl border-2 border-yellow-400/40 hover:border-yellow-400 transition-all transform hover:scale-105 shadow-lg"
                style={{ background: getSymbolBackground("🫐") }}>
             <div className="text-3xl mb-1 drop-shadow-lg">🫐</div>
-            <div className="text-xs text-purple-900 font-bold">8-9: 0.4x</div>
-            <div className="text-xs text-purple-900 font-bold">10-11: 0.9x</div>
-            <div className="text-xs text-purple-900 font-bold">12+: 4x</div>
+            <div className="text-xs text-purple-900 font-bold">8-9: 0.5x</div>
+            <div className="text-xs text-purple-900 font-bold">10-11: 1.1x</div>
+            <div className="text-xs text-purple-900 font-bold">12+: 5x</div>
           </div>
 
           {/* Yellow Banana - Lowest */}
           <div className="bg-gradient-to-br from-pink-800 to-purple-900 p-3 rounded-2xl border-2 border-yellow-400/40 hover:border-yellow-400 transition-all transform hover:scale-105 shadow-lg"
                style={{ background: getSymbolBackground("🍌") }}>
             <div className="text-3xl mb-1 drop-shadow-lg">🍌</div>
-            <div className="text-xs text-purple-900 font-bold">8-9: 0.25x</div>
-            <div className="text-xs text-purple-900 font-bold">10-11: 0.75x</div>
-            <div className="text-xs text-purple-900 font-bold">12+: 2x</div>
+            <div className="text-xs text-purple-900 font-bold">8-9: 0.3x</div>
+            <div className="text-xs text-purple-900 font-bold">10-11: 0.9x</div>
+            <div className="text-xs text-purple-900 font-bold">12+: 2.5x</div>
           </div>
 
           {/* Scatter - Special */}
@@ -1884,9 +1910,15 @@ export default function SweetBonanzaSlot() {
           </p>
         </div>
         <p className="text-yellow-200 text-xs text-center mt-6 font-semibold relative z-10">
-          ⚡ RTP: ~96.5% • Scatter Pays (8+ symbols ANYWHERE) • Tumble Feature • Bomb Multipliers in Free Spins ⚡
+          ⚡ RTP: ~95.5% • Scatter Pays (8+ symbols ANYWHERE) • Tumble Feature • Bomb Multipliers in Free Spins ⚡
         </p>
       </div>
+
+      {/* Rate Limit Modal */}
+      <RateLimitModal
+        isOpen={showRateLimitModal}
+        onClose={() => setShowRateLimitModal(false)}
+      />
     </div>
   );
 }

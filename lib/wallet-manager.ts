@@ -290,5 +290,138 @@ export async function getWalletStats(mode: WalletMode = "demo"): Promise<{
   };
 }
 
+/**
+ * Create a Lightning invoice for depositing to house wallet
+ * @param amount - Amount in sats to request
+ * @param mode - Wallet mode (demo or real)
+ * @returns Object with quote ID, invoice, and expiry
+ */
+export async function createLightningInvoice(
+  amount: number,
+  mode: WalletMode = "demo"
+): Promise<{ quoteId: string; invoice: string; expiry: number; state: string }> {
+  const { wallet } = await getHouseWallet(mode);
+
+  console.log(`[House Wallet ${mode.toUpperCase()}] Creating Lightning invoice for ${amount} sats`);
+
+  // Create mint quote using Cashu wallet
+  const mintQuote = await wallet.createMintQuote(amount);
+
+  // Validate mint response
+  if (!mintQuote.quote || typeof mintQuote.quote !== 'string') {
+    throw new Error('Invalid mint quote response: missing or invalid quote ID');
+  }
+  if (!mintQuote.request || typeof mintQuote.request !== 'string') {
+    throw new Error('Invalid mint quote response: missing or invalid invoice');
+  }
+  if (typeof mintQuote.expiry !== 'number' || mintQuote.expiry <= 0) {
+    throw new Error('Invalid mint quote response: missing or invalid expiry');
+  }
+  if (!mintQuote.state || typeof mintQuote.state !== 'string') {
+    throw new Error('Invalid mint quote response: missing or invalid state');
+  }
+
+  console.log(`[House Wallet ${mode.toUpperCase()}] Lightning invoice created:`, {
+    quoteId: mintQuote.quote,
+    invoice: mintQuote.request,
+    expiry: mintQuote.expiry,
+    state: mintQuote.state,
+  });
+
+  return {
+    quoteId: mintQuote.quote,
+    invoice: mintQuote.request,
+    expiry: mintQuote.expiry,
+    state: mintQuote.state,
+  };
+}
+
+/**
+ * Check if a Lightning invoice has been paid
+ * @param quoteId - Quote ID from createLightningInvoice
+ * @param mode - Wallet mode (demo or real)
+ * @returns Object with payment status
+ */
+export async function checkLightningPayment(
+  quoteId: string,
+  mode: WalletMode = "demo"
+): Promise<{ paid: boolean; state: string; expiry: number }> {
+  const { wallet } = await getHouseWallet(mode);
+
+  console.log(`[House Wallet ${mode.toUpperCase()}] Checking Lightning payment for quote ${quoteId}`);
+
+  // Check mint quote status
+  const quoteStatus = await wallet.checkMintQuote(quoteId);
+
+  // Validate mint response
+  if (!quoteStatus.state || typeof quoteStatus.state !== 'string') {
+    throw new Error('Invalid mint quote status response: missing or invalid state');
+  }
+  // Note: expiry may not always be present in the response, so we'll handle it gracefully
+  const expiry = typeof quoteStatus.expiry === 'number' ? quoteStatus.expiry : 0;
+
+  console.log(`[House Wallet ${mode.toUpperCase()}] Lightning payment status:`, {
+    quoteId,
+    state: quoteStatus.state,
+    paid: quoteStatus.state === "PAID",
+    expiry: expiry || 'not provided',
+  });
+
+  return {
+    paid: quoteStatus.state === "PAID",
+    state: quoteStatus.state,
+    expiry: expiry,
+  };
+}
+
+/**
+ * Mint tokens from a paid Lightning invoice and add to house wallet
+ * @param amount - Amount in sats (must match the quote amount)
+ * @param quoteId - Quote ID from createLightningInvoice
+ * @param mode - Wallet mode (demo or real)
+ * @returns Amount of tokens minted
+ */
+export async function mintFromLightning(
+  amount: number,
+  quoteId: string,
+  mode: WalletMode = "demo"
+): Promise<number> {
+  const { wallet } = await getHouseWallet(mode);
+  const data = await loadWalletData(mode);
+
+  console.log(`[House Wallet ${mode.toUpperCase()}] Minting ${amount} sats from Lightning quote ${quoteId}`);
+
+  // Mint proofs from the paid quote
+  const mintedProofs = await wallet.mintProofs(amount, quoteId);
+
+  // Validate mint response
+  if (!Array.isArray(mintedProofs)) {
+    throw new Error('Invalid mint proofs response: expected array of proofs');
+  }
+  if (mintedProofs.length === 0) {
+    throw new Error('Invalid mint proofs response: no proofs returned');
+  }
+
+  // Calculate amount minted
+  const amountMinted = mintedProofs.reduce((sum, p) => sum + p.amount, 0);
+
+  // Validate minted amount matches requested amount
+  if (amountMinted !== amount) {
+    console.error(`[House Wallet ${mode.toUpperCase()}] ERROR: Minted amount (${amountMinted}) differs from requested amount (${amount})`);
+    throw new Error(`Mint amount mismatch: expected ${amount} sats, got ${amountMinted} sats. Possible mint malfunction or attack.`);
+  }
+
+  // Add to our stored proofs
+  data.proofs.push(...mintedProofs);
+  data.balance += amountMinted;
+  data.lastUpdated = new Date().toISOString();
+
+  await saveWalletData(data, mode);
+
+  console.log(`[House Wallet ${mode.toUpperCase()}] Minted ${amountMinted} sats from Lightning. New balance: ${data.balance}`);
+
+  return amountMinted;
+}
+
 // Export type for use in other modules
 export type { WalletMode };

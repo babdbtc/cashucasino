@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest } from "@/lib/auth-middleware";
 import { sendFromHouseP2PK, type WalletMode } from "@/lib/wallet-manager";
-import { subtractFromBalance } from "@/lib/auth";
+import { subtractFromBalance, updateWithdrawalToken } from "@/lib/auth";
 import { fetchNutzapConfig, sendNutzap } from "@/lib/nostr";
 
 /**
@@ -77,9 +77,17 @@ export async function POST(req: NextRequest) {
 
     console.log(`[Withdraw Nutzap] Created P2PK-locked token for ${amount} sats`);
 
-    // Deduct from user balance
-    await subtractFromBalance(authResult.user.id, amount, "withdraw", authResult.user.wallet_mode);
-    console.log(`[Auth ${authResult.user.wallet_mode.toUpperCase()}] User ${authResult.user.id}: withdraw -${amount} sats, new balance: ${authResult.user.balance - amount}`);
+    // Deduct from user balance and save token
+    const newBalance = await subtractFromBalance(authResult.user.id, amount, "withdraw", authResult.user.wallet_mode, "Nutzap withdrawal", token);
+
+    if (newBalance === null) {
+      return NextResponse.json(
+        { error: "Insufficient balance" },
+        { status: 400 }
+      );
+    }
+
+    console.log(`[Auth ${authResult.user.wallet_mode.toUpperCase()}] User ${authResult.user.id}: withdraw -${amount} sats, new balance: ${newBalance}`);
 
     // Send nutzap (kind 9321 event)
     await sendNutzap(
@@ -95,7 +103,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       amount,
-      newBalance: authResult.user.balance - amount,
+      newBalance,
       message: `Successfully sent ${amount} sats via nutzap. Your wallet should auto-import the tokens.`,
     });
   } catch (error) {

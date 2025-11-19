@@ -156,9 +156,23 @@ function initializeDatabase(database: Database.Database) {
       user_id INTEGER NOT NULL,
       created_at INTEGER NOT NULL,
       expires_at INTEGER NOT NULL,
+      wallet_mode TEXT DEFAULT 'demo',
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )
   `);
+
+  // Migration: Add wallet_mode column to sessions if it doesn't exist
+  try {
+    const sessionTableInfo = database.prepare("PRAGMA table_info(sessions)").all() as Array<{ name: string }>;
+    const hasSessionWalletMode = sessionTableInfo.some(col => col.name === "wallet_mode");
+
+    if (!hasSessionWalletMode) {
+      console.log("[Database Migration] Adding wallet_mode column to sessions table");
+      database.exec(`ALTER TABLE sessions ADD COLUMN wallet_mode TEXT DEFAULT 'demo'`);
+    }
+  } catch (error) {
+    // Table might not exist yet, which is fine
+  }
 
   // Transactions table for audit log
   database.exec(`
@@ -169,10 +183,24 @@ function initializeDatabase(database: Database.Database) {
       amount INTEGER NOT NULL,
       balance_after INTEGER NOT NULL,
       metadata TEXT,
+      cashu_token TEXT,
       created_at INTEGER NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )
   `);
+
+  // Migration: Add cashu_token column if it doesn't exist
+  try {
+    const transactionsTableInfo = database.prepare("PRAGMA table_info(transactions)").all() as Array<{ name: string }>;
+    const hasCashuToken = transactionsTableInfo.some(col => col.name === "cashu_token");
+
+    if (!hasCashuToken) {
+      console.log("[Database Migration] Adding cashu_token column to transactions table");
+      database.exec(`ALTER TABLE transactions ADD COLUMN cashu_token TEXT`);
+    }
+  } catch (error) {
+    // Table might not exist yet, which is fine
+  }
 
   // Game states table for server-side game state (prevents client manipulation)
   database.exec(`
@@ -237,6 +265,52 @@ function initializeDatabase(database: Database.Database) {
     )
   `);
 
+  // Lightning deposit quotes - Tracks pending Lightning deposits
+  // States: UNPAID, PROCESSING, PAID, EXPIRED, MINT_FAILED, CREDIT_FAILED, CHECK_FAILED
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS lightning_deposits (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      quote_id TEXT UNIQUE NOT NULL,
+      amount INTEGER NOT NULL,
+      invoice TEXT NOT NULL,
+      state TEXT NOT NULL DEFAULT 'UNPAID',
+      expiry INTEGER NOT NULL,
+      wallet_mode TEXT DEFAULT 'demo',
+      retry_count INTEGER DEFAULT 0,
+      created_at INTEGER NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Migration: Add retry_count column if it doesn't exist
+  try {
+    const lightningTableInfo = database.prepare("PRAGMA table_info(lightning_deposits)").all() as Array<{ name: string }>;
+    const hasRetryCount = lightningTableInfo.some(col => col.name === "retry_count");
+
+    if (!hasRetryCount) {
+      console.log("[Database Migration] Adding retry_count column to lightning_deposits table");
+      database.exec(`ALTER TABLE lightning_deposits ADD COLUMN retry_count INTEGER DEFAULT 0`);
+    }
+  } catch (error) {
+    // Table might not exist yet, which is fine
+  }
+
+  // Failed credit attempts - For manual recovery when minting succeeds but balance credit fails
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS failed_credits (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      quote_id TEXT NOT NULL,
+      amount INTEGER NOT NULL,
+      error_message TEXT,
+      created_at INTEGER NOT NULL,
+      resolved BOOLEAN DEFAULT 0,
+      resolved_at INTEGER,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
   // Create indexes for better performance
   database.exec(`
     CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
@@ -248,6 +322,11 @@ function initializeDatabase(database: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_blackjack_seats_table ON blackjack_seats(table_id);
     CREATE INDEX IF NOT EXISTS idx_blackjack_seats_user ON blackjack_seats(user_id);
     CREATE INDEX IF NOT EXISTS idx_blackjack_solo_updated ON blackjack_solo_games(updated_at);
+    CREATE INDEX IF NOT EXISTS idx_lightning_deposits_user_id ON lightning_deposits(user_id);
+    CREATE INDEX IF NOT EXISTS idx_lightning_deposits_quote_id ON lightning_deposits(quote_id);
+    CREATE INDEX IF NOT EXISTS idx_lightning_deposits_state ON lightning_deposits(state);
+    CREATE INDEX IF NOT EXISTS idx_failed_credits_user_id ON failed_credits(user_id);
+    CREATE INDEX IF NOT EXISTS idx_failed_credits_resolved ON failed_credits(resolved);
   `);
 }
 
@@ -286,6 +365,17 @@ setInterval(() => {
   const realGameResult = dbReal.prepare("DELETE FROM blackjack_solo_games WHERE updated_at < ?").run(gameExpiry);
   if (realGameResult.changes > 0) {
     console.log(`[Database Real] Cleaned up ${realGameResult.changes} abandoned blackjack solo games`);
+  }
+
+  // Clean up expired Lightning deposits
+  const demoLightningResult = dbDemo.prepare("DELETE FROM lightning_deposits WHERE expiry < ? AND state != 'PAID'").run(now);
+  if (demoLightningResult.changes > 0) {
+    console.log(`[Database Demo] Cleaned up ${demoLightningResult.changes} expired Lightning deposits`);
+  }
+
+  const realLightningResult = dbReal.prepare("DELETE FROM lightning_deposits WHERE expiry < ? AND state != 'PAID'").run(now);
+  if (realLightningResult.changes > 0) {
+    console.log(`[Database Real] Cleaned up ${realLightningResult.changes} expired Lightning deposits`);
   }
 }, 60 * 60 * 1000); // Every hour
 
