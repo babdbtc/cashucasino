@@ -94,7 +94,8 @@ const SideNav = () => {
               <Image src="/icon.png" alt="Cashu Casino" width={64} height={64} className="rounded-lg" />
             </div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-neon-pink via-neon-purple to-neon-blue bg-clip-text text-transparent animate-gradient bg-[length:200%_auto]">
-              cashucasino.cc
+              cashucasino
+              <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-neon-yellow/20 border border-neon-yellow text-neon-yellow font-semibold align-middle">BETA</span>
             </h1>
             <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
               #NutNovember
