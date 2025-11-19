@@ -636,7 +636,6 @@ export default function BlackjackSolo() {
         case "player-first":
           return [];
         case "dealer-first":
-        case "ask-player-second":
         case "player-second":
           return dealerHand.slice(0, 1);
         default:
