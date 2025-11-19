@@ -19,9 +19,8 @@ interface Hand {
 
 type DealingPhase =
   | "player-first"
-  | "ask-player-second"
-  | "player-second"
   | "dealer-first"
+  | "player-second"
   | "dealer-second"
   | "complete";
 
@@ -71,15 +70,28 @@ export default function BlackjackSolo() {
         // Proper blackjack dealing order:
         // 1. First card to player
         await animateCardFromDeck("player", 0);
-        await delay(600);
+        await delay(400);
 
         // 2. First card to dealer
         setDealingPhase("dealer-first");
         await animateCardFromDeck("dealer", 0);
-        await delay(600);
+        await delay(400);
 
-        // 3. Ask player about second card
-        setDealingPhase("ask-player-second");
+        // 3. Second card to player
+        setDealingPhase("player-second");
+        await animateCardFromDeck("player", 1);
+        await delay(400);
+
+        // 4. Second card to dealer (hole card)
+        setDealingPhase("dealer-second");
+        await animateCardFromDeck("dealer", 1);
+        await delay(400);
+
+        // 5. Ready to play
+        setDealingPhase("complete");
+        setGameState("playing");
+        setMessage("Your turn!");
+        setLoading(false);
       }
     };
 
@@ -213,32 +225,6 @@ export default function BlackjackSolo() {
     }
   };
 
-  const handleSecondCardChoice = async (wants: boolean) => {
-    setLoading(true);
-
-    if (wants) {
-      // 4. Second card to player (if they want it)
-      setDealingPhase("player-second");
-      await animateCardFromDeck("player", 1);
-      await delay(600);
-    } else {
-      // If Stand, remove the second card from player hand
-      if (playerHands[0] && playerHands[0].cards.length === 2) {
-        const updatedHand = { ...playerHands[0], cards: [playerHands[0].cards[0]] };
-        setPlayerHands([updatedHand]);
-      }
-    }
-
-    // 5. Deal dealer's second card (hole card)
-    setDealingPhase("dealer-second");
-    await animateCardFromDeck("dealer", 1);
-    await delay(600);
-
-    setDealingPhase("complete");
-    setGameState("playing");
-    setMessage("Your turn!");
-    setLoading(false);
-  };
 
   const performAction = async (action: string) => {
     if (!user) return;
@@ -274,7 +260,7 @@ export default function BlackjackSolo() {
           setGameState("dealer-turn");
           setMessage("Dealer's turn...");
 
-          await delay(800);
+          await delay(400);
 
           // Show hole card flip
           setShowDealerHoleCard(true);
@@ -282,12 +268,12 @@ export default function BlackjackSolo() {
           if (holeCard) {
             gsap.to(holeCard, {
               rotationY: 180,
-              duration: 0.5,
+              duration: 0.3,
               ease: "back.out(1.5)",
             });
           }
 
-          await delay(800);
+          await delay(400);
 
           // Animate dealer drawing additional cards one by one
           const oldDealerCards = dealerHand.length;
@@ -296,17 +282,17 @@ export default function BlackjackSolo() {
             setPlayerHands(data.playerHands);
           }
 
-          // Add each new dealer card one by one with animation
+          // Add each new dealer card one by one with animation (faster)
           for (let i = oldDealerCards; i < newDealerHand.length; i++) {
-            await delay(500);
+            await delay(200);
             // Add just one more card to the dealer hand
             setDealerHand([...newDealerHand.slice(0, i + 1)]);
-            await delay(100); // Short delay for state update
+            await delay(50); // Short delay for state update
             await animateCardFromDeck("dealer", i);
-            await delay(300);
+            await delay(150);
           }
 
-          await delay(800);
+          await delay(400);
 
           setGameState("complete");
           setMessage(data.message);
@@ -627,13 +613,15 @@ export default function BlackjackSolo() {
     if (gameState === "dealing") {
       switch (dealingPhase) {
         case "player-first":
+          // Only show first card during first animation
+          return playerHands[0].cards.slice(0, 1);
         case "dealer-first":
-        case "ask-player-second":
-          // Only show first card during initial dealing
+          // Still showing only first card while dealer gets theirs
           return playerHands[0].cards.slice(0, 1);
         case "player-second":
         case "dealer-second":
-          // Show only the cards the player actually has (1 if stood, 2 if hit)
+        case "complete":
+          // Show both cards
           return playerHands[0].cards;
         default:
           return playerHands[0].cards;
@@ -705,8 +693,7 @@ export default function BlackjackSolo() {
 
           <p className="text-sm text-gray-500 dark:text-gray-500 mb-2">
             {gameState === "betting" && "Place Your Chips"}
-            {gameState === "dealing" && dealingPhase === "ask-player-second" && "First Card Dealt!"}
-            {gameState === "dealing" && dealingPhase !== "ask-player-second" && "Dealer is Dealing..."}
+            {gameState === "dealing" && "Dealer is Dealing..."}
             {gameState === "playing" && "Your Turn"}
             {gameState === "dealer-turn" && "Dealer's Turn"}
             {gameState === "complete" && "Round Complete"}
@@ -883,14 +870,8 @@ export default function BlackjackSolo() {
                 {/* HIT and STAND - Bigger */}
                 <div className="grid grid-cols-2 gap-2">
                   <button
-                    onClick={() => {
-                      if (gameState === "playing") {
-                        performAction("hit");
-                      } else if (gameState === "dealing" && dealingPhase === "ask-player-second") {
-                        handleSecondCardChoice(true);
-                      }
-                    }}
-                    disabled={!(gameState === "playing" || (gameState === "dealing" && dealingPhase === "ask-player-second")) || loading}
+                    onClick={() => performAction("hit")}
+                    disabled={gameState !== "playing" || loading}
                     className="bg-gradient-to-br from-green-600 to-green-800 hover:from-green-500 hover:to-green-700 disabled:from-gray-700 disabled:to-gray-800 disabled:opacity-30 text-white py-4 px-3 rounded-lg font-black text-base shadow-lg transform hover:scale-105 transition border-2 border-green-400"
                   >
                     👊 HIT
@@ -948,7 +929,7 @@ export default function BlackjackSolo() {
             <div className="text-center mt-3 h-8">
               {gameState === "dealing" && (
                 <div className="text-yellow-400 text-sm font-bold animate-pulse">
-                  {dealingPhase === "ask-player-second" ? "Choose your move..." : "Dealing cards..."}
+                  Dealing cards...
                 </div>
               )}
               {gameState === "dealer-turn" && (

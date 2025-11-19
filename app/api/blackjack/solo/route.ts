@@ -331,6 +331,9 @@ function finishGame(userId: number, game: any, walletMode: WalletMode) {
   const dealerResult = playDealerHand(game.dealerHand, game.deck);
   const finalDealerHand = dealerResult.finalHand;
 
+  // Calculate total bet from all hands (accounts for double/split)
+  const totalBet = game.playerHands.reduce((sum: number, hand: Hand) => sum + hand.bet, 0);
+
   // Calculate payouts
   let totalPayout = 0;
   for (const hand of game.playerHands) {
@@ -349,9 +352,9 @@ function finishGame(userId: number, game: any, walletMode: WalletMode) {
   const dealerBust = isBust(finalDealerHand);
 
   let message = "";
-  if (totalPayout > game.initialBet) {
-    message = `You win ${totalPayout - game.initialBet} sat!`;
-  } else if (totalPayout === game.initialBet) {
+  if (totalPayout > totalBet) {
+    message = `You win ${totalPayout - totalBet} sat!`;
+  } else if (totalPayout === totalBet) {
     message = "Push!";
   } else {
     message = "You lose!";
