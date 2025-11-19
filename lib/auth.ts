@@ -296,6 +296,34 @@ export function deleteUserSessions(userId: number): void {
 }
 
 /**
+ * Update session's wallet_mode when user switches wallet mode
+ * Updates session in both databases to ensure consistency
+ */
+export function updateSessionWalletMode(sessionId: string, newMode: WalletMode): boolean {
+  try {
+    // Update session in demo database
+    getDatabase("demo").prepare(`
+      UPDATE sessions
+      SET wallet_mode = ?
+      WHERE id = ?
+    `).run(newMode, sessionId);
+
+    // Update session in real database
+    getDatabase("real").prepare(`
+      UPDATE sessions
+      SET wallet_mode = ?
+      WHERE id = ?
+    `).run(newMode, sessionId);
+
+    console.log(`[Auth] Updated session ${sessionId} wallet_mode to ${newMode}`);
+    return true;
+  } catch (error) {
+    console.error("[Auth] Failed to update session wallet_mode:", error);
+    return false;
+  }
+}
+
+/**
  * Get user's balance from their active wallet mode
  */
 export function getUserBalance(userId: number, mode: WalletMode): number {
