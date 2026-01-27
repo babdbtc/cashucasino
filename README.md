@@ -2,6 +2,8 @@
 
 **Someone hosted this at: [cashucasino.cc](https://cashucasino.cc)**
 
+*Developed during the [Cashu NutNovember Hackathon](https://nutnovember.org)*
+
 A privacy-focused online casino powered by Cashu ecash. Play provably fair casino games with Bitcoin through Cashu tokens - minimal registration, instant deposits/withdrawals, and complete transparency.
 
 > **⚠️ WORK IN PROGRESS**: This project is under active development. Bugs may exist, and deposited funds could be irreversibly lost due to software errors or mint issues. **Only deposit amounts you are completely comfortable losing.** Use at your own risk.
@@ -30,55 +32,14 @@ A privacy-focused online casino powered by Cashu ecash. Play provably fair casin
 ### Games
 - **Sweet Bonanza Slots**: 6x5 cluster pays slot with tumble mechanic, free spins, and multipliers (RTP: ~95.5%)
 - **Plinko**: Drop the ball through 16 rows of pegs with three risk levels (Low/Medium/High) and multipliers up to 1000x
-- **Blackjack**: Classic 21 with standard rules (Coming Soon)
+- **Crash**: Watch the multiplier rise and cash out before it crashes
+- **Mines**: Find gems and avoid mines with increasing multipliers
+- **Blackjack**: Classic 21 with standard rules
 
 ### Provably Fair
 - **Cryptographic RNG**: Uses Node.js `crypto.randomBytes()` for secure randomness
 - **Open Source RTP Scripts**: All payout calculations available on GitHub
 - **Transparent Mechanics**: Full game logic visible in source code
-
-## Available Games
-
-### Sweet Bonanza
-- **Type**: 6x5 cluster pays slot with tumble mechanic
-- **RTP**: ~95.5% (4.5% house edge)
-- **Min Bet**: 5 sats
-- **Max Bet**: 1000 sats
-- **Features**:
-  - **Cluster Pays**: Win with 8+ matching symbols anywhere on grid
-  - **Tumble Mechanic**: Winning symbols disappear, new ones drop for consecutive wins
-  - **Free Spins**: 4+ scatter symbols trigger 10 free spins
-  - **Bomb Multipliers**: Random multipliers (2x-100x) in free spins mode
-  - **Buy Feature**: Purchase 10 free spins for 100x bet
-  - **Turbo Mode**: Speed up animations for faster gameplay
-  - **Autoplay**: Up to 500 automatic spins with customizable settings
-
-**Paytable** (8+ symbols):
-- 🍬 Red Heart: 8-9 = 12x | 10-11 = 30x | 12+ = 60x
-- 💜 Purple Candy: 8-9 = 10x | 10-11 = 25x | 12+ = 50x
-- 💚 Green Candy: 8-9 = 8x | 10-11 = 20x | 12+ = 40x
-- 💙 Blue Candy: 8-9 = 6x | 10-11 = 15x | 12+ = 30x
-- 🍎 Apple: 8-9 = 4x | 10-11 = 10x | 12+ = 25x
-- 🍇 Grapes: 8-9 = 3x | 10-11 = 8x | 12+ = 20x
-- 🍉 Watermelon: 8-9 = 2x | 10-11 = 6x | 12+ = 15x
-- 🫐 Blueberry: 8-9 = 1.5x | 10-11 = 4x | 12+ = 10x
-- 🍌 Banana: 8-9 = 1x | 10-11 = 3x | 12+ = 8x
-- 🍭 Scatter: 4+ triggers 10 free spins
-
-### Plinko
-- **Type**: Probability-based ball drop game
-- **Rows**: 16 pegs, 17 multiplier slots
-- **Risk Levels**:
-  - **Low Risk**: Max 16x, safer middle slots
-  - **Medium Risk**: Max 110x, balanced risk/reward
-  - **High Risk**: Max 1000x, extreme edges
-- **Min Bet**: 1 sat
-- **Max Bet**: 1000 sats
-
-**Multipliers**:
-- Low: [16, 9, 2, 1.4, 1.4, 1.2, 1.1, 1, 0.5, 1, 1.1, 1.2, 1.4, 1.4, 2, 9, 16]
-- Medium: [110, 41, 10, 5, 3, 1.5, 1, 0.5, 0.3, 0.5, 1, 1.5, 3, 5, 10, 41, 110]
-- High: [1000, 130, 26, 9, 4, 2, 0.2, 0.2, 0.2, 0.2, 0.2, 2, 4, 9, 26, 130, 1000]
 
 ## Authentication Methods
 
@@ -273,7 +234,7 @@ Withdraw using Nostr Zap protocol with Cashu tokens.
 1. **Clone the repository**:
 ```bash
 git clone https://github.com/babdbtc/cashucasino.git
-cd gamble.babd
+cd cashucasino
 ```
 
 2. **Install dependencies**:
@@ -359,158 +320,6 @@ npm start
 - Balance updates validated server-side
 - Bet limits enforced (1-1000 sats)
 
-## Lightning Deposit Implementation
-
-The Lightning deposit feature allows users to deposit Bitcoin via any Lightning Network wallet, with automatic conversion to Cashu tokens and balance crediting.
-
-### Architecture
-
-**Flow**: Lightning Payment → Cashu Mint → Cashu Tokens → User Balance
-
-1. User requests deposit amount
-2. Casino creates Lightning invoice via Cashu mint (NUT-04)
-3. User pays invoice with any Lightning wallet
-4. Casino polls mint to check payment status (NUT-05)
-5. Once paid, mint converts Lightning → Cashu tokens
-6. Casino mints tokens and credits user balance
-7. All automatic - no manual token handling needed
-
-### Database Schema
-
-**`lightning_deposits` Table**:
-```sql
-CREATE TABLE lightning_deposits (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER NOT NULL,
-  quote_id TEXT UNIQUE NOT NULL,      -- Mint quote identifier
-  amount INTEGER NOT NULL,             -- Amount in sats
-  invoice TEXT NOT NULL,               -- Lightning invoice (BOLT11)
-  state TEXT NOT NULL DEFAULT 'UNPAID', -- UNPAID, PAID, EXPIRED
-  expiry INTEGER NOT NULL,             -- Unix timestamp
-  wallet_mode TEXT DEFAULT 'demo',     -- demo or real
-  created_at INTEGER NOT NULL,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-```
-
-### API Endpoints
-
-**`POST /api/balance/deposit-lightning`** - Create Lightning invoice
-- **Auth**: Required (session-based)
-- **Rate Limit**: 10 requests per minute per IP
-- **Input**: `{ amount: number }` (minimum 1 sat)
-- **Output**: `{ quoteId, invoice, amount, expiry, state }`
-- **Function**: Creates Lightning invoice via `wallet.createMintQuote()`
-- **Storage**: Stores invoice in `lightning_deposits` table
-
-**`POST /api/balance/deposit-lightning-claim`** - Check payment and credit balance
-- **Auth**: Required (session-based)
-- **Rate Limit**: 20 requests per minute per IP (allows polling)
-- **Input**: `{ quoteId: string }`
-- **Output**: `{ success, paid, amount?, newBalance? }`
-- **Function**:
-  1. Checks payment status via `wallet.checkMintQuote()`
-  2. If paid, mints tokens via `wallet.mintProofs()`
-  3. Credits user balance atomically
-  4. Updates database state to 'PAID'
-- **Polling**: Frontend checks every 3 seconds until payment confirmed
-
-### Core Functions (`lib/wallet-manager.ts`)
-
-**`createLightningInvoice(amount, mode)`**
-```typescript
-// Creates Lightning invoice via Cashu mint
-const mintQuote = await wallet.createMintQuote(amount);
-return {
-  quoteId: mintQuote.quote,      // Unique quote identifier
-  invoice: mintQuote.request,     // BOLT11 invoice string
-  expiry: mintQuote.expiry,       // Unix timestamp
-  state: mintQuote.state          // UNPAID, PAID, etc.
-};
-```
-
-**`checkLightningPayment(quoteId, mode)`**
-```typescript
-// Checks if Lightning invoice has been paid
-const quoteStatus = await wallet.checkMintQuote(quoteId);
-return {
-  paid: quoteStatus.state === "PAID",
-  state: quoteStatus.state,
-  expiry: quoteStatus.expiry
-};
-```
-
-**`mintFromLightning(amount, quoteId, mode)`**
-```typescript
-// Mints Cashu tokens from paid Lightning invoice
-const mintedProofs = await wallet.mintProofs(amount, quoteId);
-// Adds proofs to house wallet storage
-// Returns amount minted
-```
-
-### Frontend Implementation
-
-**Location**: `components/WalletPanel.tsx`
-
-**Features**:
-- Tab-based UI (Lightning / Cashu Token)
-- QR code display for easy mobile scanning
-- Real-time payment polling (3-second intervals)
-- Loading spinner while waiting for payment
-- Success confirmation with checkmark animation
-- Auto-close after payment confirmed
-- Invoice copy-to-clipboard functionality
-
-**State Management**:
-```typescript
-const [depositMethod, setDepositMethod] = useState<"cashu" | "lightning">("lightning");
-const [lightningInvoice, setLightningInvoice] = useState("");
-const [checkingPayment, setCheckingPayment] = useState(false);
-const [paymentConfirmed, setPaymentConfirmed] = useState(false);
-```
-
-**Payment Detection Flow**:
-1. User clicks "Create Invoice"
-2. Invoice generated and QR code displayed
-3. Polling starts (every 3 seconds)
-4. When paid, `paymentConfirmed` set to true
-5. Success animation shown
-6. Balance updated
-7. Modal auto-closes after 3 seconds
-
-### Security Considerations
-
-- **Rate Limiting**: Invoice creation (10/min) and claim checks (20/min) to prevent abuse
-- **Authentication**: All endpoints require valid session
-- **Ownership Verification**: Quote ID must belong to requesting user
-- **Atomic Operations**: Balance updates use existing transaction-safe `addToBalance()`
-- **Double-Credit Prevention**: Database checks if quote already paid before minting
-- **Expiry Handling**: Expired invoices automatically marked and cleaned up
-- **Error Recovery**: Critical errors logged for manual intervention if needed
-
-### Cleanup & Maintenance
-
-- **Expired Invoices**: Automatically deleted hourly if unpaid and past expiry
-- **Abandoned Checks**: Frontend stops polling after 10 minutes
-- **Database Indexes**: Optimized for fast quote lookups
-
-### Testing
-
-**Demo Mode**:
-- Uses `testnut.cashu.space` mint
-- Test Lightning payments (may require test Lightning wallet)
-
-**Real Mode**:
-- Uses `mint.minibits.cash` mint
-- Real Bitcoin Lightning payments
-
-### Error Handling
-
-- **Invoice Creation Failure**: Returns 500 with user-friendly error
-- **Payment Check Failure**: Returns 500, frontend continues polling
-- **Minting Failure**: Critical error logged, support notified
-- **Balance Credit Failure**: Critical error logged with quote ID for recovery
-
 ## RTP Transparency
 
 All games have their RTP (Return to Player) calculated and verified through Monte Carlo simulations.
@@ -535,12 +344,9 @@ npx tsx scripts/simulate-bonanza.ts
 
 ## Deployment
 
-See [DEPLOYMENT.md](./docs/DEPLOYMENT.md) for detailed VPS deployment instructions.
-
-**Quick overview**:
 1. Build the app: `npm run build`
 2. Use PM2 for process management
-3. Configure Nginx as reverse proxy
+3. Configure Nginx as reverse proxy (see `nginx.conf.example`)
 4. Set up SSL with Let's Encrypt
 5. Configure production environment variables
 6. Initialize SQLite database
@@ -564,47 +370,11 @@ Contributions are welcome! Please follow these guidelines:
 - Test all payment flows (deposit/withdraw)
 - Verify Nostr integration works with multiple extensions
 
-## Roadmap
-
-- [x] Sweet Bonanza Slots with tumble mechanic
-- [x] Plinko with 3 risk levels
-- [x] Nostr authentication (NIP-07, NIP-98)
-- [x] Nostr instant withdrawals (NIP-04)
-- [x] Dual wallet system (Demo/Real)
-- [x] Account ID auth system
-- [x] RTP simulation tools
-- [x] Cross-tab balance sync
-- [x] Turbo mode & autoplay
-- [x] Lightning Network deposits with QR codes
-- [ ] Blackjack (in progress)
-- [ ] Roulette
-- [ ] Dice game
-- [ ] Game history/statistics
-- [ ] Provably fair verification UI
-- [ ] Multi-mint support
-- [ ] Social features (Nostr leaderboards)
-- [ ] Mobile PWA
-- [ ] Nutzap withdrawals
-- [ ] More Sweet Bonanza features
-
-## Documentation
-
-For detailed guides and documentation, see the **[docs/](./docs/)** folder:
-- [Quick Start Guide](./docs/QUICKSTART.md)
-- [Getting Cashu Tokens](./docs/GETTING_TOKENS.md)
-- [Withdrawal Guide](./docs/WITHDRAWAL_GUIDE.md)
-- [Nostr Integration](./docs/NOSTR_INTEGRATION.md)
-- [Sweet Bonanza Mechanics](./docs/SWEET_BONANZA_MECHANICS.md)
-- [Deployment Guide](./docs/DEPLOYMENT.md)
-- [Wallet Management](./docs/WALLET_MANAGEMENT.md)
-- [Security Analysis](./docs/SECURITY_ANALYSIS.md)
-- [RTP Simulation Scripts](./scripts/README-SIMULATION.md)
 
 ## Support
 
 For issues or questions:
 - [Open an issue on GitHub](https://github.com/babdbtc/cashucasino/issues)
-- Browse the [documentation folder](./docs/) for detailed guides
 - Contact via Nostr: [npub1d3h6cxpz9y9f20c5rg08hgadjtns4stmyqw75q8spssdp46r635q33wvj0](https://njump.me/npub1d3h6cxpz9y9f20c5rg08hgadjtns4stmyqw75q8spssdp46r635q33wvj0)
 
 ## License
