@@ -8,6 +8,9 @@ A privacy-focused online casino powered by Cashu ecash. Play provably fair casin
 
 > **⚠️ WORK IN PROGRESS**: This project is under active development. Bugs may exist, and deposited funds could be irreversibly lost due to software errors or mint issues. **Only deposit amounts you are completely comfortable losing.** Use at your own risk.
 
+https://github.com/user-attachments/assets/a512a12f-b6af-43ee-81d4-57d3a66e05a6
+
+
 ## Features
 
 ### Authentication & Privacy
